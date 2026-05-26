@@ -26,8 +26,8 @@ io.on("connection", (socket) => {
 
     const roomId = Math.random()
       .toString(36)
-      .substring(2, 8);
-
+      .substring(2, 8)
+      .toUpperCase();
     rooms[roomId] = {
       players: [
         {
@@ -40,7 +40,7 @@ io.on("connection", (socket) => {
     socket.join(roomId);
 
     socket.emit("room_created", {
-      roomId,
+        roomId: roomId.toUpperCase(),
       players: rooms[roomId].players,
     });
 
