@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import socket from "./socket";
 import Canvas from "./components/Canvas";
+import Home from "./pages/Home";
 function App() {
 
   const [name, setName] = useState("");
