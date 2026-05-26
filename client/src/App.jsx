@@ -8,6 +8,7 @@ function App() {
   const [createdRoomId, setCreatedRoomId] = useState("");
   const [joinRoomId, setJoinRoomId] = useState("");
   const [players, setPlayers] = useState([]);
+  const [inRoom, setInRoom] = useState(false);
 
   useEffect(() => {
 
@@ -16,6 +17,7 @@ function App() {
 
       setCreatedRoomId(data.roomId);
       setPlayers(data.players);
+      setInRoom(true);
     });
 
     socket.on("player_list", (players) => {
@@ -40,7 +42,12 @@ function App() {
       roomId: joinRoomId,
       playerName: name,
     });
+    setInRoom(true);
   };
+
+  if (!inRoom) {
+    return <Home />;
+  }
 
   return (
     <div>
@@ -49,6 +56,7 @@ function App() {
 
       <input
         placeholder="Enter Name"
+        value={name}
         onChange={(e) => setName(e.target.value)}
       />
 
@@ -58,6 +66,7 @@ function App() {
 
       <input
         placeholder="Room ID"
+        value={joinRoomId}
         onChange={(e) => setJoinRoomId(e.target.value)}
       />
 
