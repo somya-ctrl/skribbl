@@ -10,9 +10,15 @@ app.use(cors());
 
 const server = http.createServer(app);
 
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://skribbl-smoky.vercel.app",
+];
+
 const io = new Server(server, {
   cors: {
-    origin: "https://skribbl-smoky.vercel.app",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
   },
 });
