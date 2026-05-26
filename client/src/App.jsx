@@ -159,7 +159,7 @@ function App() {
               <span className="text-xs text-white/30">800x500</span>
             </div>
             <div className="rounded-xl overflow-hidden border-2 border-white/[0.06] shadow-inner bg-white">
-              <Canvas />
+                <Canvas roomId={roomId} />
             </div>
             <div className="flex items-center gap-2 text-white/30 text-xs mt-1">
               <span>✏️</span>

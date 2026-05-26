@@ -12,7 +12,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "https://skribbl-smoky.vercel.app",
+    origin: "http://localhost:5173",
     methods: ["GET", "POST"],
   },
 });
@@ -113,6 +113,20 @@ io.on("connection", (socket) => {
       }
     }
   });
+  socket.on("draw", (data) => {
+
+  const { roomId, x, y, prevX, prevY, color, brushSize } = data;
+
+  socket.to(roomId).emit("draw", {
+    x,
+    y,
+    prevX,
+    prevY,
+    color,
+    brushSize,
+  });
+
+});
 
 });
 

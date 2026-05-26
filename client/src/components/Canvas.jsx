@@ -1,82 +1,123 @@
 import { useEffect, useRef, useState } from "react";
 import socket from "../socket";
 
-function Canvas() {
+export default function Canvas({ roomId }) {
 
   const canvasRef = useRef(null);
-  
 
-  const [isDrawing, setIsDrawing] = useState(false);
+  const [drawing, setDrawing] = useState(false);
+
+  const prevPos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
 
     const canvas = canvasRef.current;
+
     const ctx = canvas.getContext("2d");
 
-    socket.on("draw_data", (data) => {
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 4;
 
-      ctx.lineWidth = 3;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = "black";
+    socket.on("draw", (data) => {
 
-      ctx.beginPath();
+      drawLine(
+        data.prevX,
+        data.prevY,
+        data.x,
+        data.y,
+        data.color,
+        data.brushSize
+      );
 
-      ctx.moveTo(data.prevX, data.prevY);
-      ctx.lineTo(data.x, data.y);
-
-      ctx.stroke();
     });
 
     return () => {
-      socket.off("draw_data");
+      socket.off("draw");
     };
 
   }, []);
 
-  const startDrawing = (e) => {
-    setIsDrawing(true);
-  };
-
-  const stopDrawing = () => {
-    setIsDrawing(false);
-  };
-
-  const draw = (e) => {
-
-    if (!isDrawing) return;
+  const drawLine = (
+    prevX,
+    prevY,
+    x,
+    y,
+    color = "black",
+    brushSize = 4
+  ) => {
 
     const canvas = canvasRef.current;
 
-    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext("2d");
 
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = brushSize;
 
-    const prevX = x;
-    const prevY = y;
+    ctx.beginPath();
 
-    socket.emit("draw_move", {
+    ctx.moveTo(prevX, prevY);
+
+    ctx.lineTo(x, y);
+
+    ctx.stroke();
+
+  };
+
+  const startDrawing = (e) => {
+
+    setDrawing(true);
+
+    prevPos.current = {
+      x: e.nativeEvent.offsetX,
+      y: e.nativeEvent.offsetY,
+    };
+
+  };
+
+  const stopDrawing = () => {
+    setDrawing(false);
+  };
+
+  const handleDraw = (e) => {
+
+    if (!drawing) return;
+
+    const x = e.nativeEvent.offsetX;
+
+    const y = e.nativeEvent.offsetY;
+
+    drawLine(
+      prevPos.current.x,
+      prevPos.current.y,
+      x,
+      y
+    );
+
+    socket.emit("draw", {
+      roomId,
       x,
       y,
-      prevX,
-      prevY,
+      prevX: prevPos.current.x,
+      prevY: prevPos.current.y,
+      color: "black",
+      brushSize: 4,
     });
+
+    prevPos.current = { x, y };
+
   };
 
   return (
     <canvas
       ref={canvasRef}
-      width={800}
+      width={900}
       height={500}
-      style={{
-        border: "2px solid black",
-        background: "white",
-      }}
+      className="bg-white rounded-xl cursor-crosshair"
       onMouseDown={startDrawing}
       onMouseUp={stopDrawing}
-      onMouseMove={draw}
+      onMouseLeave={stopDrawing}
+      onMouseMove={handleDraw}
     />
   );
 }
-
-export default Canvas;
