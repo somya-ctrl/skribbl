@@ -1,10 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import socket from "./socket";
 
 function App() {
+
   const [name, setName] = useState("");
   const [roomId, setRoomId] = useState("");
   const [players, setPlayers] = useState([]);
+
+  useEffect(() => {
+
+    socket.on("room_created", (data) => {
+      console.log(data);
+
+      setRoomId(data.roomId);
+      setPlayers(data.players);
+    });
+
+    socket.on("player_list", (players) => {
+      setPlayers(players);
+    });
+
+    return () => {
+      socket.off("room_created");
+      socket.off("player_list");
+    };
+
+  }, []);
 
   const createRoom = () => {
     socket.emit("create_room", {
@@ -19,20 +40,10 @@ function App() {
     });
   };
 
-  socket.on("room_created", (data) => {
-    console.log(data);
-
-    setRoomId(data.roomId);
-    setPlayers(data.players);
-  });
-
-  socket.on("player_list", (players) => {
-    setPlayers(players);
-  });
-
   return (
     <div>
-      <h1>Skribbl Clone</h1>
+
+      <h1>Skribbl</h1>
 
       <input
         placeholder="Enter Name"
@@ -51,7 +62,7 @@ function App() {
       <button onClick={joinRoom}>
         Join Room
       </button>
-
+      <h3>Room Code: {roomId}</h3>
       <h2>Players</h2>
 
       {players.map((player) => (
@@ -59,6 +70,7 @@ function App() {
           {player.name}
         </p>
       ))}
+
     </div>
   );
 }

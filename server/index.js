@@ -51,7 +51,11 @@ io.on("connection", (socket) => {
     id: socket.id,
     name: playerName,
   };
+  const alreadyExists = room.players.find(
+  (p) => p.id === socket.id
+);
 
+if (alreadyExists) return;
   room.players.push(player);
 
   socket.join(roomId);
