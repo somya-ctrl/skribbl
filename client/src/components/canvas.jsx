@@ -4,6 +4,7 @@ import socket from "../socket";
 function Canvas() {
 
   const canvasRef = useRef(null);
+  
 
   const [isDrawing, setIsDrawing] = useState(false);
 
