@@ -4,7 +4,8 @@ import socket from "./socket";
 function App() {
 
   const [name, setName] = useState("");
-  const [roomId, setRoomId] = useState("");
+  const [createdRoomId, setCreatedRoomId] = useState("");
+  const [joinRoomId, setJoinRoomId] = useState("");
   const [players, setPlayers] = useState([]);
 
   useEffect(() => {
@@ -12,7 +13,7 @@ function App() {
     socket.on("room_created", (data) => {
       console.log(data);
 
-      setRoomId(data.roomId);
+      setCreatedRoomId(data.roomId);
       setPlayers(data.players);
     });
 
@@ -35,7 +36,7 @@ function App() {
 
   const joinRoom = () => {
     socket.emit("join_room", {
-      roomId,
+      roomId: joinRoomId,
       playerName: name,
     });
   };
@@ -56,13 +57,13 @@ function App() {
 
       <input
         placeholder="Room ID"
-        onChange={(e) => setRoomId(e.target.value)}
+        onChange={(e) => setJoinRoomId(e.target.value)}
       />
 
       <button onClick={joinRoom}>
         Join Room
       </button>
-      <h3>Room Code: {roomId}</h3>
+      <h3>Room Code: {createdRoomId}</h3>
       <h2>Players</h2>
 
       {players.map((player) => (
