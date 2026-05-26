@@ -2,7 +2,7 @@ import { useState } from "react";
 
 const TABS = ["join", "create"];
 
-export default function Home() {
+export default function Home({ onJoin, onCreate }) {
   const [tab, setTab] = useState("join");
   const [name, setName] = useState("");
   const [roomCode, setRoomCode] = useState("");
@@ -12,14 +12,12 @@ export default function Home() {
 
   const handleJoin = () => {
     if (!name.trim() || !roomCode.trim()) return alert("Please fill all fields");
-    console.log("join", name, roomCode);
-    // socket.emit('join_room', { playerName: name, roomId: roomCode })
+    onJoin(name, roomCode);
   };
 
   const handleCreate = () => {
     if (!name.trim()) return alert("Please enter your name");
-    console.log("create", name, settings);
-    // socket.emit('create_room', { playerName: name, settings })
+    onCreate(name, settings);
   };
 
   return (
