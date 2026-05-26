@@ -12,7 +12,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: "https://skribbl-smoky.vercel.app",
     methods: ["GET", "POST"],
   },
 });
@@ -95,16 +95,11 @@ io.on("connection", (socket) => {
     console.log("User disconnected:", socket.id);
 
     for (const roomId in rooms) {
-
-      rooms[roomId].players =
-        rooms[roomId].players.filter(
-          (player) => player.id !== socket.id
-        );
-
-      io.to(roomId).emit(
-        "player_list",
-        rooms[roomId].players
+      rooms[roomId].players = rooms[roomId].players.filter(
+        (player) => player.id !== socket.id
       );
+
+      io.to(roomId).emit("player_list", rooms[roomId].players);
 
       // delete empty room
       if (rooms[roomId].players.length === 0) {
@@ -113,20 +108,19 @@ io.on("connection", (socket) => {
       }
     }
   });
+
   socket.on("draw", (data) => {
+    const { roomId, x, y, prevX, prevY, color, brushSize } = data;
 
-  const { roomId, x, y, prevX, prevY, color, brushSize } = data;
-
-  socket.to(roomId).emit("draw", {
-    x,
-    y,
-    prevX,
-    prevY,
-    color,
-    brushSize,
+    socket.to(roomId).emit("draw", {
+      x,
+      y,
+      prevX,
+      prevY,
+      color,
+      brushSize,
+    });
   });
-
-});
 
 });
 
