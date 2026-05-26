@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import socket from "./socket";
-
+import Canvas from "./components/Canvas";
 function App() {
 
   const [name, setName] = useState("");
@@ -71,8 +71,9 @@ function App() {
           {player.name}
         </p>
       ))}
-
+       <Canvas />
     </div>
+        
   );
 }
 
