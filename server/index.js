@@ -192,6 +192,20 @@ io.on("connection", (socket) => {
   });
 
 });
+socket.on(
+  "chat_message",
+  ({ roomId, playerName, text }) => {
+
+    io.to(roomId).emit(
+      "chat_message",
+      {
+        playerName,
+        text,
+      }
+    );
+
+  }
+);
 
 });
 

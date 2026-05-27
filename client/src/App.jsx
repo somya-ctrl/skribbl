@@ -10,6 +10,8 @@ function App() {
   const [players, setPlayers] = useState([]);
   const [inRoom, setInRoom] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [messages, setMessages] = useState([]);
+const [messageInput, setMessageInput] = useState("");
 
   // NEW
   const [currentDrawer, setCurrentDrawer] =
@@ -39,12 +41,21 @@ function App() {
       setInRoom(false);
 
     });
+    socket.on("chat_message", (message) => {
+
+  setMessages((prev) => [
+    ...prev,
+    message,
+  ]);
+
+});
 
     return () => {
 
       socket.off("room_created");
       socket.off("player_list");
       socket.off("error_message");
+      socket.off("chat_message");
 
     };
 
@@ -97,6 +108,19 @@ function App() {
     setCurrentDrawer("");
 
   };
+  const sendMessage = () => {
+
+  if (!messageInput.trim()) return;
+
+  socket.emit("chat_message", {
+    roomId,
+    playerName: name,
+    text: messageInput,
+  });
+
+  setMessageInput("");
+
+};
 
   const copyRoomId = () => {
 
@@ -258,6 +282,65 @@ function App() {
             ))}
 
           </div>
+          {/* CHAT SECTION */}
+<div className="mt-4 flex flex-col h-full">
+
+  <h2 className="text-[11px] font-bold text-white/30 uppercase tracking-widest mb-3">
+    Chat
+  </h2>
+
+  {/* MESSAGES */}
+  <div className="flex-1 bg-[#111118]/60 rounded-xl border border-white/[0.05] p-3 overflow-y-auto flex flex-col gap-2 max-h-[250px]">
+
+    {messages.map((msg, idx) => (
+
+      <div
+        key={idx}
+        className="text-sm"
+      >
+
+        <span className="font-semibold text-[#6c63ff]">
+          {msg.playerName}:
+        </span>
+
+        <span className="text-white/80 ml-2">
+          {msg.text}
+        </span>
+
+      </div>
+
+    ))}
+
+  </div>
+
+  {/* INPUT */}
+  <div className="flex gap-2 mt-3">
+
+    <input
+      type="text"
+      placeholder="Type a guess..."
+      value={messageInput}
+      onChange={(e) =>
+        setMessageInput(e.target.value)
+      }
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          sendMessage();
+        }
+      }}
+      className="flex-1 bg-[#111118] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white outline-none"
+    />
+
+    <button
+      onClick={sendMessage}
+      className="px-4 py-2 bg-[#6c63ff] hover:bg-[#7b73ff] rounded-xl text-sm font-medium"
+    >
+      Send
+    </button>
+
+  </div>
+
+</div>
 
         </aside>
 
