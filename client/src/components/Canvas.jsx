@@ -6,6 +6,7 @@ export default function Canvas({ roomId }) {
   const canvasRef = useRef(null);
 
   const [drawing, setDrawing] = useState(false);
+  const [color, setColor] = useState("black");
 
   const prevPos = useRef({ x: 0, y: 0 });
 
@@ -43,7 +44,7 @@ export default function Canvas({ roomId }) {
     prevY,
     x,
     y,
-    color = "black",
+    color,
     brushSize = 4
   ) => {
 
@@ -88,20 +89,21 @@ export default function Canvas({ roomId }) {
     const y = e.nativeEvent.offsetY;
 
     drawLine(
-      prevPos.current.x,
-      prevPos.current.y,
-      x,
-      y
-    );
-
+  prevPos.current.x,
+  prevPos.current.y,
+  x,
+  y,
+  color,
+  color === "white" ? 20 : 4
+);
     socket.emit("draw", {
       roomId,
       x,
       y,
       prevX: prevPos.current.x,
       prevY: prevPos.current.y,
-      color: "black",
-      brushSize: 4,
+      color: color,
+      brushSize: color === "white" ? 20 : 4,
     });
 
     prevPos.current = { x, y };
@@ -109,15 +111,40 @@ export default function Canvas({ roomId }) {
   };
 
   return (
+  <div>
+
+    <div
+      style={{
+        marginBottom: "10px",
+        display: "flex",
+        gap: "10px",
+      }}
+    >
+
+      <button onClick={() => setColor("black")}>
+        Brush
+      </button>
+
+      <button onClick={() => setColor("white")}>
+        Eraser
+      </button>
+
+    </div>
+
     <canvas
       ref={canvasRef}
       width={900}
       height={500}
-      className="bg-white rounded-xl cursor-crosshair"
+      style={{
+        backgroundColor: "white",
+        border: "2px solid black",
+      }}
       onMouseDown={startDrawing}
       onMouseUp={stopDrawing}
       onMouseLeave={stopDrawing}
       onMouseMove={handleDraw}
     />
-  );
+
+  </div>
+);
 }

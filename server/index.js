@@ -118,7 +118,7 @@ io.on("connection", (socket) => {
   socket.on("draw", (data) => {
     const { roomId, x, y, prevX, prevY, color, brushSize } = data;
 
-    socket.to(roomId).emit("draw", {
+    io.to(roomId).emit("draw", {
       x,
       y,
       prevX,
