@@ -130,7 +130,20 @@ io.on("connection", (socket) => {
     });
 
   });
+   socket.on("clear_canvas", ({ roomId }) => {
 
+  const room = rooms[roomId];
+
+  if (!room) return;
+
+  // only current drawer can clear
+  if (socket.id !== room.currentDrawer) {
+    return;
+  }
+
+  io.to(roomId).emit("canvas_cleared");
+
+});
   // DISCONNECT
   socket.on("disconnect", () => {
 

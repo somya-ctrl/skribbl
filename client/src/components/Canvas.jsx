@@ -39,11 +39,26 @@ export default function Canvas({
 
     });
 
-    return () => {
-      socket.off("draw");
-    };
+     socket.on("canvas_cleared", () => {
 
-  }, []);
+    ctx.clearRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+  });
+
+  return () => {
+
+    socket.off("draw");
+
+    socket.off("canvas_cleared");
+
+  };
+
+}, []);
 
   const drawLine = (
     prevX,
@@ -126,74 +141,91 @@ export default function Canvas({
 
   return (
     <div>
-
       {/* TOOLBAR */}
-      <div
-        style={{
-          display: "flex",
-          gap: "10px",
-          marginBottom: "10px",
-        }}
-      >
-
-        <button
-          onClick={() => setColor("black")}
-          disabled={!canDraw}
-          style={{
-            padding: "8px 14px",
-            background: "black",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: canDraw
-              ? "pointer"
-              : "not-allowed",
-            opacity: canDraw ? 1 : 0.5,
-          }}
-        >
-          Brush
-        </button>
-
-        <button
-          onClick={() => setColor("white")}
-          disabled={!canDraw}
-          style={{
-            padding: "8px 14px",
-            background: "#ddd",
-            color: "black",
-            border: "1px solid #999",
-            borderRadius: "8px",
-            cursor: canDraw
-              ? "pointer"
-              : "not-allowed",
-            opacity: canDraw ? 1 : 0.5,
-          }}
-        >
-          Eraser
-        </button>
-
-      </div>
-      <button
-  onClick={() =>
-    socket.emit("clear_canvas", {
-      roomId,
-    })
-  }
-  disabled={!canDraw}
+<div
   style={{
-    padding: "8px 14px",
-    background: "#ff4b4b",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    cursor: canDraw
-      ? "pointer"
-      : "not-allowed",
-    opacity: canDraw ? 1 : 0.5,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "10px",
+    width: "100%",
   }}
 >
-  Clear
-</button>
+
+  {/* LEFT SIDE */}
+  <div
+    style={{
+      display: "flex",
+      gap: "10px",
+    }}
+  >
+
+    <button
+      onClick={() => setColor("black")}
+      disabled={!canDraw}
+      style={{
+        padding: "8px 14px",
+        background: "black",
+        color: "white",
+        border: "none",
+        borderRadius: "8px",
+        cursor: canDraw
+          ? "pointer"
+          : "not-allowed",
+        opacity: canDraw ? 1 : 0.5,
+      }}
+    >
+      Brush
+    </button>
+
+    <button
+      onClick={() => setColor("white")}
+      disabled={!canDraw}
+      style={{
+        padding: "8px 14px",
+        background: "#ddd",
+        color: "black",
+        border: "1px solid #999",
+        borderRadius: "8px",
+        cursor: canDraw
+          ? "pointer"
+          : "not-allowed",
+        opacity: canDraw ? 1 : 0.5,
+      }}
+    >
+      Eraser
+    </button>
+
+  </div>
+
+  {/* RIGHT SIDE */}
+  <button
+    onClick={() =>
+      socket.emit("clear_canvas", {
+        roomId,
+      })
+    }
+    disabled={!canDraw}
+    style={{
+      padding: "8px 14px",
+      background: "#ff4b4b",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      cursor: canDraw
+        ? "pointer"
+        : "not-allowed",
+      opacity: canDraw ? 1 : 0.5,
+    }}
+  >
+    Clear
+  </button>
+
+</div>
+
+        
+       
+
 
       {/* CANVAS */}
       <canvas
