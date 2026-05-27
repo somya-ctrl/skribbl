@@ -212,6 +212,44 @@ socket.on(
   "chat_message",
   ({ roomId, playerName, text }) => {
 
+    const room = rooms[roomId];
+
+    if (!room) return;
+
+    // DRAWER CANNOT CHAT WORD
+    if (socket.id === room.currentDrawer) {
+
+      io.to(socket.id).emit(
+        "chat_message",
+        {
+          playerName: "SYSTEM",
+          text:
+            "Drawer cannot send guesses.",
+        }
+      );
+
+      return;
+    }
+
+    // CORRECT GUESS
+    if (
+      text.toLowerCase().trim() ===
+      room.currentWord.toLowerCase()
+    ) {
+
+      io.to(roomId).emit(
+        "chat_message",
+        {
+          playerName: "SYSTEM",
+          text:
+            `${playerName} guessed correctly! 🎉`,
+        }
+      );
+
+      return;
+    }
+
+    // NORMAL CHAT
     io.to(roomId).emit(
       "chat_message",
       {
@@ -222,7 +260,6 @@ socket.on(
 
   }
 );
-
 });
 
 const PORT = process.env.PORT || 3000;
