@@ -173,6 +173,27 @@ export default function Canvas({
         </button>
 
       </div>
+      <button
+  onClick={() =>
+    socket.emit("clear_canvas", {
+      roomId,
+    })
+  }
+  disabled={!canDraw}
+  style={{
+    padding: "8px 14px",
+    background: "#ff4b4b",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    cursor: canDraw
+      ? "pointer"
+      : "not-allowed",
+    opacity: canDraw ? 1 : 0.5,
+  }}
+>
+  Clear
+</button>
 
       {/* CANVAS */}
       <canvas

@@ -42,6 +42,7 @@ io.on("connection", (socket) => {
         },
       ],
       currentDrawer: socket.id,
+      currentDrawerIndex: 0,
     };
 
     socket.join(roomId);
@@ -157,6 +158,27 @@ io.on("connection", (socket) => {
       }
     }
   });
+  socket.on("next_turn", ({ roomId }) => {
+
+  const room = rooms[roomId];
+
+  if (!room) return;
+
+  room.currentDrawerIndex =
+    (room.currentDrawerIndex + 1) %
+    room.players.length;
+
+  room.currentDrawer =
+    room.players[
+      room.currentDrawerIndex
+    ].id;
+
+  io.to(roomId).emit("player_list", {
+    players: room.players,
+    currentDrawer: room.currentDrawer,
+  });
+
+});
 
 });
 
