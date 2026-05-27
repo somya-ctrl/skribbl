@@ -65,7 +65,9 @@ io.on("connection", (socket) => {
       players: rooms[roomId].players,
       currentDrawer: rooms[roomId].currentDrawer,
     });
-   
+    socket.emit("your_word", {
+  word: rooms[roomId].currentWord,
+});
 
     console.log("Room created:", roomId);
     console.log(rooms);
