@@ -113,23 +113,43 @@ export default function Canvas({ roomId }) {
   return (
   <div>
 
-    <div
-      style={{
-        marginBottom: "10px",
-        display: "flex",
-        gap: "10px",
-      }}
-    >
+<div
+  style={{
+    display: "flex",
+    gap: "10px",
+    marginBottom: "10px",
+  }}
+>
 
-      <button onClick={() => setColor("black")}>
-        Brush
-      </button>
+  <button
+    onClick={() => setColor("black")}
+    style={{
+      padding: "8px 14px",
+      background: "black",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      cursor: "pointer",
+    }}
+  >
+    Brush
+  </button>
 
-      <button onClick={() => setColor("white")}>
-        Eraser
-      </button>
+  <button
+    onClick={() => setColor("white")}
+    style={{
+      padding: "8px 14px",
+      background: "#ddd",
+      color: "black",
+      border: "1px solid #999",
+      borderRadius: "8px",
+      cursor: "pointer",
+    }}
+  >
+    Eraser
+  </button>
 
-    </div>
+</div>
 
     <canvas
       ref={canvasRef}
