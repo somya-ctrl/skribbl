@@ -14,6 +14,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://skribbl-smoky.vercel.app",
 ];
+
 const words = [
   "apple",
   "tiger",
@@ -22,6 +23,7 @@ const words = [
   "pizza",
   "tree",
 ];
+
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -46,17 +48,20 @@ io.on("connection", (socket) => {
         {
           id: socket.id,
           name: playerName,
-          score:0,
+          score: 0,
         },
       ],
+
       currentDrawer: socket.id,
+
       currentDrawerIndex: 0,
+
       currentWord:
-  words[
-    Math.floor(
-      Math.random() * words.length
-    )
-  ],
+        words[
+          Math.floor(
+            Math.random() * words.length
+          )
+        ],
     };
 
     socket.join(roomId);
@@ -64,57 +69,77 @@ io.on("connection", (socket) => {
     socket.emit("room_created", {
       roomId,
       players: rooms[roomId].players,
-      currentDrawer: rooms[roomId].currentDrawer,
+      currentDrawer:
+        rooms[roomId].currentDrawer,
     });
+
+    // SEND WORD TO DRAWER
     socket.emit("your_word", {
-  word: rooms[roomId].currentWord,
-});
+      word:
+        rooms[roomId].currentWord,
+    });
 
     console.log("Room created:", roomId);
-    console.log(rooms);
 
   });
 
   // JOIN ROOM
-  socket.on("join_room", ({ roomId, playerName }) => {
+  socket.on(
+    "join_room",
+    ({ roomId, playerName }) => {
 
-    console.log("Trying to join:", roomId);
+      console.log(
+        "Trying to join:",
+        roomId
+      );
 
-    const room = rooms[roomId];
+      const room = rooms[roomId];
 
-    if (!room) {
-      socket.emit("error_message", "Room not found");
-      console.log("Room not found");
-      return;
+      if (!room) {
+
+        socket.emit(
+          "error_message",
+          "Room not found"
+        );
+
+        return;
+
+      }
+
+      const alreadyExists =
+        room.players.find(
+          (p) => p.id === socket.id
+        );
+
+      if (alreadyExists) {
+        return;
+      }
+
+      const player = {
+        id: socket.id,
+        name: playerName,
+        score: 0,
+      };
+
+      room.players.push(player);
+
+      socket.join(roomId);
+
+      io.to(roomId).emit(
+        "player_list",
+        {
+          players: room.players,
+          currentDrawer:
+            room.currentDrawer,
+        }
+      );
+
+      console.log(
+        `${playerName} joined ${roomId}`
+      );
+
     }
-
-    const alreadyExists = room.players.find(
-      (p) => p.id === socket.id
-    );
-
-    if (alreadyExists) {
-      console.log("Player already exists");
-      return;
-    }
-
-    const player = {
-      id: socket.id,
-      name: playerName,
-      score:0,
-    };
-
-    room.players.push(player);
-
-    socket.join(roomId);
-
-    io.to(roomId).emit("player_list", {
-      players: room.players,
-      currentDrawer: room.currentDrawer,
-    });
-
-    console.log(`${playerName} joined ${roomId}`);
-
-  });
+  );
 
   // DRAW EVENT
   socket.on("draw", (data) => {
@@ -133,8 +158,10 @@ io.on("connection", (socket) => {
 
     if (!room) return;
 
-    // only current drawer can draw
-    if (socket.id !== room.currentDrawer) {
+    // ONLY DRAWER CAN DRAW
+    if (
+      socket.id !== room.currentDrawer
+    ) {
       return;
     }
 
@@ -148,135 +175,253 @@ io.on("connection", (socket) => {
     });
 
   });
-   socket.on("clear_canvas", ({ roomId }) => {
 
-  const room = rooms[roomId];
+  // CLEAR CANVAS
+  socket.on(
+    "clear_canvas",
+    ({ roomId }) => {
 
-  if (!room) return;
+      const room = rooms[roomId];
 
-  // only current drawer can clear
-  if (socket.id !== room.currentDrawer) {
-    return;
-  }
+      if (!room) return;
 
-  io.to(roomId).emit("canvas_cleared");
+      // ONLY DRAWER CAN CLEAR
+      if (
+        socket.id !==
+        room.currentDrawer
+      ) {
+        return;
+      }
 
-});
+      io.to(roomId).emit(
+        "canvas_cleared"
+      );
+
+    }
+  );
+
+  // NEXT TURN
+  socket.on(
+    "next_turn",
+    ({ roomId }) => {
+
+      const room = rooms[roomId];
+
+      if (!room) return;
+
+      // NEXT DRAWER
+      room.currentDrawerIndex =
+        (room.currentDrawerIndex + 1) %
+        room.players.length;
+
+      room.currentDrawer =
+        room.players[
+          room.currentDrawerIndex
+        ].id;
+
+      // NEW WORD
+      room.currentWord =
+        words[
+          Math.floor(
+            Math.random() *
+              words.length
+          )
+        ];
+
+      // SEND WORD TO NEW DRAWER
+      io.to(
+        room.currentDrawer
+      ).emit("your_word", {
+        word: room.currentWord,
+      });
+
+      // UPDATE PLAYERS
+      io.to(roomId).emit(
+        "player_list",
+        {
+          players: room.players,
+          currentDrawer:
+            room.currentDrawer,
+        }
+      );
+
+      // CLEAR BOARD
+      io.to(roomId).emit(
+        "canvas_cleared"
+      );
+
+    }
+  );
+
+  // CHAT + GUESSING
+  socket.on(
+    "chat_message",
+    ({ roomId, playerName, text }) => {
+
+      const room = rooms[roomId];
+
+      if (!room) return;
+
+      // DRAWER CANNOT GUESS
+      if (
+        socket.id ===
+        room.currentDrawer
+      ) {
+
+        io.to(socket.id).emit(
+          "chat_message",
+          {
+            playerName: "SYSTEM",
+            text:
+              "Drawer cannot send guesses.",
+          }
+        );
+
+        return;
+
+      }
+
+      // CORRECT GUESS
+      if (
+        text.toLowerCase().trim() ===
+        room.currentWord
+          .toLowerCase()
+      ) {
+
+        // GIVE SCORE
+        const guessedPlayer =
+          room.players.find(
+            (p) =>
+              p.id === socket.id
+          );
+
+        if (guessedPlayer) {
+          guessedPlayer.score += 10;
+        }
+
+        // SUCCESS MESSAGE
+        io.to(roomId).emit(
+          "chat_message",
+          {
+            playerName: "SYSTEM",
+            text:
+              `${playerName} guessed correctly! 🎉`,
+          }
+        );
+
+        // NEXT DRAWER
+        room.currentDrawerIndex =
+          (room.currentDrawerIndex +
+            1) %
+          room.players.length;
+
+        room.currentDrawer =
+          room.players[
+            room.currentDrawerIndex
+          ].id;
+
+        // NEW WORD
+        room.currentWord =
+          words[
+            Math.floor(
+              Math.random() *
+                words.length
+            )
+          ];
+
+        // SEND WORD TO NEW DRAWER
+        io.to(
+          room.currentDrawer
+        ).emit("your_word", {
+          word: room.currentWord,
+        });
+
+        // UPDATE PLAYERS
+        io.to(roomId).emit(
+          "player_list",
+          {
+            players: room.players,
+            currentDrawer:
+              room.currentDrawer,
+          }
+        );
+
+        // CLEAR BOARD
+        io.to(roomId).emit(
+          "canvas_cleared"
+        );
+
+        return;
+
+      }
+
+      // NORMAL CHAT
+      io.to(roomId).emit(
+        "chat_message",
+        {
+          playerName,
+          text,
+        }
+      );
+
+    }
+  );
+
   // DISCONNECT
   socket.on("disconnect", () => {
 
-    console.log("User disconnected:", socket.id);
+    console.log(
+      "User disconnected:",
+      socket.id
+    );
 
     for (const roomId in rooms) {
 
       rooms[roomId].players =
         rooms[roomId].players.filter(
-          (player) => player.id !== socket.id
+          (player) =>
+            player.id !== socket.id
         );
 
-      io.to(roomId).emit("player_list", {
-        players: rooms[roomId].players,
-        currentDrawer: rooms[roomId].currentDrawer,
-      });
+      io.to(roomId).emit(
+        "player_list",
+        {
+          players:
+            rooms[roomId].players,
+          currentDrawer:
+            rooms[roomId]
+              .currentDrawer,
+        }
+      );
 
-      // delete empty room
-      if (rooms[roomId].players.length === 0) {
+      // DELETE EMPTY ROOM
+      if (
+        rooms[roomId].players
+          .length === 0
+      ) {
 
         delete rooms[roomId];
 
-        console.log("Room deleted:", roomId);
+        console.log(
+          "Room deleted:",
+          roomId
+        );
 
       }
+
     }
-  });
-  socket.on("next_turn", ({ roomId }) => {
 
-  const room = rooms[roomId];
-
-  if (!room) return;
-
-  room.currentDrawerIndex =
-    (room.currentDrawerIndex + 1) %
-    room.players.length;
-
-  room.currentDrawer =
-    room.players[
-      room.currentDrawerIndex
-    ].id;
-
-  io.to(roomId).emit("player_list", {
-    players: room.players,
-    currentDrawer: room.currentDrawer,
   });
 
 });
-socket.on(
-  "chat_message",
-  ({ roomId, playerName, text }) => {
 
-    const room = rooms[roomId];
-
-    if (!room) return;
-
-    // DRAWER CANNOT CHAT WORD
-    if (socket.id === room.currentDrawer) {
-
-      io.to(socket.id).emit(
-        "chat_message",
-        {
-          playerName: "SYSTEM",
-          text:
-            "Drawer cannot send guesses.",
-        }
-      );
-
-      return;
-    }
-
-    // CORRECT GUESS
-    if (
-      text.toLowerCase().trim() ===
-      room.currentWord.toLowerCase()
-    ) {
-      const guessedPlayer =
-  room.players.find(
-    (p) => p.id === socket.id
-  );
-
-if (guessedPlayer) {
-  guessedPlayer.score += 10;
-}
-      io.to(roomId).emit(
-        "chat_message",
-        {
-          playerName: "SYSTEM",
-          text:
-            `${playerName} guessed correctly! 🎉`,
-        }
-      );
-      io.to(roomId).emit("player_list", {
-  players: room.players,
-  currentDrawer: room.currentDrawer,
-});
-
-      return;
-    }
-
-    // NORMAL CHAT
-    io.to(roomId).emit(
-      "chat_message",
-      {
-        playerName,
-        text,
-      }
-    );
-
-  }
-);
-});
-
-const PORT = process.env.PORT || 3000;
+const PORT =
+  process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+
+  console.log(
+    `Server running on port ${PORT}`
+  );
+
 });

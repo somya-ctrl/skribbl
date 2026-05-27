@@ -17,6 +17,35 @@ const [currentWord, setCurrentWord] =
   // NEW
   const [currentDrawer, setCurrentDrawer] =
     useState("");
+    const [timeLeft, setTimeLeft] =
+  useState(60);
+
+  useEffect(() => {
+
+  if (!inRoom) return;
+
+  const interval = setInterval(() => {
+
+    setTimeLeft((prev) => {
+
+      if (prev <= 1) {
+
+        socket.emit("next_turn", {
+          roomId,
+        });
+
+        return 60;
+      }
+
+      return prev - 1;
+
+    });
+
+  }, 1000);
+
+  return () => clearInterval(interval);
+
+}, [inRoom, roomId]);
 
   useEffect(() => {
 
@@ -368,6 +397,9 @@ const [currentWord, setCurrentWord] =
               </span>
 
             </div>
+            <div className="text-white text-lg font-bold">
+  ⏳ {timeLeft}s
+</div>
              {socket.id === currentDrawer && (
   <div className="text-lg font-bold text-yellow-400">
     Word: {currentWord}
