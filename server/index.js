@@ -14,7 +14,14 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://skribbl-smoky.vercel.app",
 ];
-
+const words = [
+  "apple",
+  "tiger",
+  "car",
+  "house",
+  "pizza",
+  "tree",
+];
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -43,6 +50,12 @@ io.on("connection", (socket) => {
       ],
       currentDrawer: socket.id,
       currentDrawerIndex: 0,
+      currentWord:
+  words[
+    Math.floor(
+      Math.random() * words.length
+    )
+  ],
     };
 
     socket.join(roomId);
@@ -52,6 +65,7 @@ io.on("connection", (socket) => {
       players: rooms[roomId].players,
       currentDrawer: rooms[roomId].currentDrawer,
     });
+   
 
     console.log("Room created:", roomId);
     console.log(rooms);

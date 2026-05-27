@@ -287,7 +287,7 @@ export default function Canvas({
         </button>
 
       </div>
-
+      
       {/* CANVAS */}
       <canvas
         ref={canvasRef}

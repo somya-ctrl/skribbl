@@ -12,7 +12,8 @@ function App() {
   const [copied, setCopied] = useState(false);
   const [messages, setMessages] = useState([]);
 const [messageInput, setMessageInput] = useState("");
-
+const [currentWord, setCurrentWord] =
+  useState("");
   // NEW
   const [currentDrawer, setCurrentDrawer] =
     useState("");
@@ -47,9 +48,13 @@ const [messageInput, setMessageInput] = useState("");
     ...prev,
     message,
   ]);
+  
+});
+ socket.on("your_word", ({ word }) => {
+
+  setCurrentWord(word);
 
 });
-
     return () => {
 
       socket.off("room_created");
@@ -360,7 +365,11 @@ const [messageInput, setMessageInput] = useState("");
               </span>
 
             </div>
-
+             {socket.id === currentDrawer && (
+  <div className="text-lg font-bold text-yellow-400">
+    Word: {currentWord}
+  </div>
+)}
             <div className="rounded-xl overflow-hidden border-2 border-white/[0.06] shadow-inner bg-white">
 
               <Canvas
