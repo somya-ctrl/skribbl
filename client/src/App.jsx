@@ -220,8 +220,7 @@ const [currentWord, setCurrentWord] =
             <h2 className="text-[11px] font-bold text-white/30 uppercase tracking-widest">
               Players
             </h2>
-
-            <span className="bg-[#6c63ff]/10 text-[#9c96ff] text-xs font-semibold px-2.5 py-0.5 rounded-full border border-[#6c63ff]/15">
+                   <span className="bg-[#6c63ff]/10 text-[#9c96ff] text-xs font-semibold px-2.5 py-0.5 rounded-full border border-[#6c63ff]/15">
               {players.length} online
             </span>
 
@@ -229,7 +228,9 @@ const [currentWord, setCurrentWord] =
 
           <div className="flex flex-col gap-2.5 overflow-y-auto">
 
-            {players.map((player, idx) => (
+             {[...players]
+             .sort((a, b) => b.score - a.score)
+            .map((player, idx) => (
 
               <div
                 key={player.id || idx}
@@ -279,7 +280,9 @@ const [currentWord, setCurrentWord] =
                     )}
 
                   </p>
-
+                  <p className="text-xs text-white/40 mt-1">
+  Score: {player.score}
+</p>
                 </div>
 
               </div>

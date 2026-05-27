@@ -46,6 +46,7 @@ io.on("connection", (socket) => {
         {
           id: socket.id,
           name: playerName,
+          score:0,
         },
       ],
       currentDrawer: socket.id,
@@ -99,6 +100,7 @@ io.on("connection", (socket) => {
     const player = {
       id: socket.id,
       name: playerName,
+      score:0,
     };
 
     room.players.push(player);
@@ -236,7 +238,14 @@ socket.on(
       text.toLowerCase().trim() ===
       room.currentWord.toLowerCase()
     ) {
+      const guessedPlayer =
+  room.players.find(
+    (p) => p.id === socket.id
+  );
 
+if (guessedPlayer) {
+  guessedPlayer.score += 10;
+}
       io.to(roomId).emit(
         "chat_message",
         {
@@ -245,6 +254,10 @@ socket.on(
             `${playerName} guessed correctly! 🎉`,
         }
       );
+      io.to(roomId).emit("player_list", {
+  players: room.players,
+  currentDrawer: room.currentDrawer,
+});
 
       return;
     }
