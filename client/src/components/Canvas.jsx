@@ -1,14 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import socket from "../socket";
 
-export default function Canvas({ roomId }) {
+export default function Canvas({
+  roomId,
+  canDraw,
+}) {
 
   const canvasRef = useRef(null);
 
   const [drawing, setDrawing] = useState(false);
   const [color, setColor] = useState("black");
 
-  const prevPos = useRef({ x: 0, y: 0 });
+  const prevPos = useRef({
+    x: 0,
+    y: 0,
+  });
 
   useEffect(() => {
 
@@ -67,6 +73,9 @@ export default function Canvas({ roomId }) {
 
   const startDrawing = (e) => {
 
+    // only drawer can draw
+    if (!canDraw) return;
+
     setDrawing(true);
 
     prevPos.current = {
@@ -82,6 +91,9 @@ export default function Canvas({ roomId }) {
 
   const handleDraw = (e) => {
 
+    // only drawer can draw
+    if (!canDraw) return;
+
     if (!drawing) return;
 
     const x = e.nativeEvent.offsetX;
@@ -89,21 +101,23 @@ export default function Canvas({ roomId }) {
     const y = e.nativeEvent.offsetY;
 
     drawLine(
-  prevPos.current.x,
-  prevPos.current.y,
-  x,
-  y,
-  color,
-  color === "white" ? 20 : 4
-);
+      prevPos.current.x,
+      prevPos.current.y,
+      x,
+      y,
+      color,
+      color === "white" ? 20 : 4
+    );
+
     socket.emit("draw", {
       roomId,
       x,
       y,
       prevX: prevPos.current.x,
       prevY: prevPos.current.y,
-      color: color,
-      brushSize: color === "white" ? 20 : 4,
+      color,
+      brushSize:
+        color === "white" ? 20 : 4,
     });
 
     prevPos.current = { x, y };
@@ -111,60 +125,73 @@ export default function Canvas({ roomId }) {
   };
 
   return (
-  <div>
+    <div>
 
-<div
-  style={{
-    display: "flex",
-    gap: "10px",
-    marginBottom: "10px",
-  }}
->
+      {/* TOOLBAR */}
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          marginBottom: "10px",
+        }}
+      >
 
-  <button
-    onClick={() => setColor("black")}
-    style={{
-      padding: "8px 14px",
-      background: "black",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-    }}
-  >
-    Brush
-  </button>
+        <button
+          onClick={() => setColor("black")}
+          disabled={!canDraw}
+          style={{
+            padding: "8px 14px",
+            background: "black",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            cursor: canDraw
+              ? "pointer"
+              : "not-allowed",
+            opacity: canDraw ? 1 : 0.5,
+          }}
+        >
+          Brush
+        </button>
 
-  <button
-    onClick={() => setColor("white")}
-    style={{
-      padding: "8px 14px",
-      background: "#ddd",
-      color: "black",
-      border: "1px solid #999",
-      borderRadius: "8px",
-      cursor: "pointer",
-    }}
-  >
-    Eraser
-  </button>
+        <button
+          onClick={() => setColor("white")}
+          disabled={!canDraw}
+          style={{
+            padding: "8px 14px",
+            background: "#ddd",
+            color: "black",
+            border: "1px solid #999",
+            borderRadius: "8px",
+            cursor: canDraw
+              ? "pointer"
+              : "not-allowed",
+            opacity: canDraw ? 1 : 0.5,
+          }}
+        >
+          Eraser
+        </button>
 
-</div>
+      </div>
 
-    <canvas
-      ref={canvasRef}
-      width={900}
-      height={500}
-      style={{
-        backgroundColor: "white",
-        border: "2px solid black",
-      }}
-      onMouseDown={startDrawing}
-      onMouseUp={stopDrawing}
-      onMouseLeave={stopDrawing}
-      onMouseMove={handleDraw}
-    />
+      {/* CANVAS */}
+      <canvas
+        ref={canvasRef}
+        width={900}
+        height={500}
+        style={{
+          backgroundColor: "white",
+          border: "2px solid black",
+          cursor: canDraw
+            ? "crosshair"
+            : "not-allowed",
+        }}
+        onMouseDown={startDrawing}
+        onMouseUp={stopDrawing}
+        onMouseLeave={stopDrawing}
+        onMouseMove={handleDraw}
+      />
 
-  </div>
-);
+    </div>
+  );
 }

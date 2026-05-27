@@ -10,7 +10,6 @@ app.use(cors());
 
 const server = http.createServer(app);
 
-
 const allowedOrigins = [
   "http://localhost:5173",
   "https://skribbl-smoky.vercel.app",
@@ -34,6 +33,7 @@ io.on("connection", (socket) => {
       .toString(36)
       .substring(2, 8)
       .toUpperCase();
+
     rooms[roomId] = {
       players: [
         {
@@ -41,13 +41,15 @@ io.on("connection", (socket) => {
           name: playerName,
         },
       ],
+      currentDrawer: socket.id,
     };
 
     socket.join(roomId);
 
     socket.emit("room_created", {
-        roomId: roomId.toUpperCase(),
+      roomId,
       players: rooms[roomId].players,
+      currentDrawer: rooms[roomId].currentDrawer,
     });
 
     console.log("Room created:", roomId);
@@ -86,37 +88,36 @@ io.on("connection", (socket) => {
 
     socket.join(roomId);
 
-    io.to(roomId).emit(
-      "player_list",
-      room.players
-    );
+    io.to(roomId).emit("player_list", {
+      players: room.players,
+      currentDrawer: room.currentDrawer,
+    });
 
     console.log(`${playerName} joined ${roomId}`);
 
   });
 
-  // DISCONNECT
-  socket.on("disconnect", () => {
-
-    console.log("User disconnected:", socket.id);
-
-    for (const roomId in rooms) {
-      rooms[roomId].players = rooms[roomId].players.filter(
-        (player) => player.id !== socket.id
-      );
-
-      io.to(roomId).emit("player_list", rooms[roomId].players);
-
-      // delete empty room
-      if (rooms[roomId].players.length === 0) {
-        delete rooms[roomId];
-        console.log("Room deleted:", roomId);
-      }
-    }
-  });
-
+  // DRAW EVENT
   socket.on("draw", (data) => {
-    const { roomId, x, y, prevX, prevY, color, brushSize } = data;
+
+    const {
+      roomId,
+      x,
+      y,
+      prevX,
+      prevY,
+      color,
+      brushSize,
+    } = data;
+
+    const room = rooms[roomId];
+
+    if (!room) return;
+
+    // only current drawer can draw
+    if (socket.id !== room.currentDrawer) {
+      return;
+    }
 
     io.to(roomId).emit("draw", {
       x,
@@ -126,6 +127,35 @@ io.on("connection", (socket) => {
       color,
       brushSize,
     });
+
+  });
+
+  // DISCONNECT
+  socket.on("disconnect", () => {
+
+    console.log("User disconnected:", socket.id);
+
+    for (const roomId in rooms) {
+
+      rooms[roomId].players =
+        rooms[roomId].players.filter(
+          (player) => player.id !== socket.id
+        );
+
+      io.to(roomId).emit("player_list", {
+        players: rooms[roomId].players,
+        currentDrawer: rooms[roomId].currentDrawer,
+      });
+
+      // delete empty room
+      if (rooms[roomId].players.length === 0) {
+
+        delete rooms[roomId];
+
+        console.log("Room deleted:", roomId);
+
+      }
+    }
   });
 
 });
