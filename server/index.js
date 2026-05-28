@@ -136,18 +136,31 @@ function nextTurn(roomId) {
         room.timerInterval
       );
 
-      const winner =
-        [...room.players].sort(
-          (a, b) =>
-            b.score - a.score
-        )[0];
+      const sortedPlayers =
+  [...room.players].sort(
+    (a, b) =>
+      b.score - a.score
+  );
+
+const topScore =
+  sortedPlayers[0].score;
+
+const winners =
+  sortedPlayers.filter(
+    (player) =>
+      player.score === topScore
+  );
 
       io.to(roomId).emit(
         "chat_message",
         {
           playerName: "SYSTEM",
           text:
-            `🏆 ${winner.name} wins the game!`,
+            winners.length > 1
+  ? `🤝 Draw between ${winners
+      .map((p) => p.name)
+      .join(" & ")}!`
+  : `🏆 ${winners[0].name} wins the game!`
         }
       );
 
