@@ -10,8 +10,6 @@ function App() {
   const [players, setPlayers] = useState([]);
   const [inRoom, setInRoom] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [wordChoices, setWordChoices] =
-  useState([]);
 
   const [messages, setMessages] =
     useState([]);
@@ -25,9 +23,14 @@ function App() {
   const [currentDrawer, setCurrentDrawer] =
     useState("");
 
-  // TIMER
   const [timeLeft, setTimeLeft] =
     useState(0);
+
+  const [wordChoices, setWordChoices] =
+    useState([]);
+
+  const [winner, setWinner] =
+    useState("");
 
   useEffect(() => {
 
@@ -75,6 +78,17 @@ function App() {
           message,
         ]);
 
+        // WINNER
+        if (
+          message.text.includes(
+            "wins the game"
+          )
+        ) {
+
+          setWinner(message.text);
+
+        }
+
       }
     );
 
@@ -86,14 +100,16 @@ function App() {
 
       }
     );
+
     socket.on(
-  "word_choices",
-  ({ words }) => {
+      "word_choices",
+      ({ words }) => {
 
-    setWordChoices(words);
+        setWordChoices(words);
 
-  }
-);
+      }
+    );
+
     socket.on(
       "timer_update",
       (time) => {
@@ -114,6 +130,8 @@ function App() {
       socket.off("chat_message");
 
       socket.off("your_word");
+
+      socket.off("word_choices");
 
       socket.off("timer_update");
 
@@ -174,11 +192,15 @@ function App() {
 
     setCurrentWord("");
 
+    setWordChoices([]);
+
+    setWinner("");
+
     setTimeLeft(0);
 
   };
 
-  // SEND CHAT
+  // SEND MESSAGE
   const sendMessage = () => {
 
     if (!messageInput.trim()) return;
@@ -193,7 +215,7 @@ function App() {
 
   };
 
-  // COPY ROOM CODE
+  // COPY ROOM ID
   const copyRoomId = () => {
 
     navigator.clipboard.writeText(
@@ -210,7 +232,7 @@ function App() {
 
   };
 
-  // HOME SCREEN
+  // HOME
   if (!inRoom) {
 
     return (
@@ -294,7 +316,7 @@ function App() {
         {/* SIDEBAR */}
         <aside className="w-80 bg-[#1a1a27]/60 border-r border-white/[0.06] p-6 flex flex-col gap-5">
 
-          {/* PLAYERS HEADER */}
+          {/* PLAYERS */}
           <div className="flex items-center justify-between">
 
             <h2 className="text-[11px] font-bold text-white/30 uppercase tracking-widest">
@@ -466,17 +488,51 @@ function App() {
 
         </aside>
 
-        {/* DRAW AREA */}
+        {/* MAIN BOARD */}
         <main className="flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto">
 
           <div className="bg-[#1a1a27] p-5 rounded-2xl border border-white/[0.07] shadow-2xl flex flex-col items-center gap-4">
 
-            {/* TOP BAR */}
+            {/* TOP */}
             <div className="w-full flex justify-between items-center px-1">
 
-              <span className="text-sm font-semibold text-white/70">
-                Drawing Board
-              </span>
+              <div className="flex flex-col">
+
+                <span className="text-sm font-semibold text-white/70">
+                  Drawing Board
+                </span>
+
+                <div className="flex gap-3 mt-1">
+
+                  {[...players]
+                    .sort(
+                      (a, b) =>
+                        b.score - a.score
+                    )
+                    .slice(0, 3)
+                    .map((player) => (
+
+                      <div
+                        key={player.id}
+                        className="text-xs bg-[#111118] px-2 py-1 rounded-lg border border-white/[0.06]"
+                      >
+
+                        {player.id === currentDrawer &&
+                          "👑 "}
+
+                        {player.name}:{" "}
+
+                        <span className="text-yellow-400">
+                          {player.score}
+                        </span>
+
+                      </div>
+
+                    ))}
+
+                </div>
+
+              </div>
 
               <span className="text-xs text-white/30">
                 900x500
@@ -493,11 +549,92 @@ function App() {
 
             </div>
 
-            {/* WORD */}
-            {socket.id === currentDrawer && (
-              <div className="text-2xl font-bold text-yellow-400">
-                Word: {currentWord}
+            {/* WORD CHOICES */}
+            {socket.id === currentDrawer &&
+              wordChoices.length > 0 && (
+
+                <div className="flex gap-3">
+
+                  {wordChoices.map((word) => (
+
+                    <button
+                      key={word}
+                      onClick={() => {
+
+                        socket.emit(
+                          "select_word",
+                          {
+                            roomId,
+                            word,
+                          }
+                        );
+
+                        setCurrentWord(
+                          word
+                        );
+
+                        setWordChoices([]);
+
+                      }}
+                      className="px-4 py-2 bg-[#6c63ff] hover:bg-[#7b73ff] rounded-xl"
+                    >
+
+                      {word}
+
+                    </button>
+
+                  ))}
+
+                </div>
+
+              )}
+
+            {/* CURRENT WORD */}
+            {socket.id === currentDrawer &&
+              currentWord &&
+              wordChoices.length === 0 && (
+
+                <div className="text-2xl font-bold text-yellow-400">
+                  Word: {currentWord}
+                </div>
+
+              )}
+
+            {/* WINNER SCREEN */}
+            {winner && (
+
+              <div className="w-full bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-6 flex flex-col items-center gap-4">
+
+                <div className="text-5xl">
+                  🏆
+                </div>
+
+                <h2 className="text-2xl font-bold text-yellow-400">
+
+                  {winner}
+
+                </h2>
+
+                <button
+                  onClick={() => {
+
+                    setWinner("");
+
+                    socket.emit(
+                      "play_again",
+                      { roomId }
+                    );
+
+                  }}
+                  className="px-5 py-2 bg-[#6c63ff] hover:bg-[#7b73ff] rounded-xl font-medium"
+                >
+
+                  Play Again
+
+                </button>
+
               </div>
+
             )}
 
             {/* WAITING */}
@@ -512,40 +649,6 @@ function App() {
               </div>
 
             )}
-            {socket.id === currentDrawer &&
-wordChoices.length > 0 && (
-
-  <div className="flex gap-3">
-
-    {wordChoices.map((word) => (
-
-      <button
-        key={word}
-        onClick={() => {
-
-          socket.emit(
-            "select_word",
-            {
-              roomId,
-              word,
-            }
-          );
-
-          setCurrentWord(word);
-
-          setWordChoices([]);
-
-        }}
-        className="px-4 py-2 bg-[#6c63ff] rounded-xl"
-      >
-        {word}
-      </button>
-
-    ))}
-
-  </div>
-
-)}
 
             {/* CANVAS */}
             <div className="rounded-xl overflow-hidden border-2 border-white/[0.06] shadow-inner bg-white">
@@ -559,7 +662,7 @@ wordChoices.length > 0 && (
 
             </div>
 
-            {/* HELP TEXT */}
+            {/* HELP */}
             <div className="flex items-center gap-2 text-white/30 text-xs mt-1">
 
               <span>✏️</span>

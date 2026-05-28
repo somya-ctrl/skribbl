@@ -473,7 +473,73 @@ io.on("connection", (socket) => {
     );
 
   });
+  socket.on(
+  "play_again",
+  ({ roomId }) => {
 
+    const room = rooms[roomId];
+
+    if (!room) return;
+
+    // RESET SCORES
+    room.players.forEach(
+      (player) => {
+
+        player.score = 0;
+
+      }
+    );
+
+    room.currentRound = 1;
+
+    room.currentDrawerIndex = 0;
+
+    room.currentDrawer =
+      room.players[0].id;
+
+    room.gameStarted = true;
+
+    // NEW WORDS
+    const choices =
+      getRandomWords(
+        room.wordChoices
+      );
+
+    room.wordOptions = choices;
+
+    io.to(room.currentDrawer).emit(
+      "word_choices",
+      {
+        words: choices,
+      }
+    );
+
+    io.to(roomId).emit(
+      "player_list",
+      {
+        players: room.players,
+        currentDrawer:
+          room.currentDrawer,
+      }
+    );
+
+    io.to(roomId).emit(
+      "canvas_cleared"
+    );
+
+    io.to(roomId).emit(
+      "chat_message",
+      {
+        playerName: "SYSTEM",
+        text:
+          `🎮 New game started! Round 1/${room.maxRounds}`,
+      }
+    );
+
+    startTimer(roomId);
+
+  }
+);
   // CLEAR CANVAS
   socket.on(
     "clear_canvas",
