@@ -22,33 +22,6 @@ const [currentWord, setCurrentWord] =
 
   useEffect(() => {
 
-  if (!inRoom) return;
-
-  const interval = setInterval(() => {
-
-    setTimeLeft((prev) => {
-
-      if (prev <= 1) {
-
-        socket.emit("next_turn", {
-          roomId,
-        });
-
-        return 60;
-      }
-
-      return prev - 1;
-
-    });
-
-  }, 1000);
-
-  return () => clearInterval(interval);
-
-}, [inRoom, roomId]);
-
-  useEffect(() => {
-
     socket.on("room_created", (data) => {
 
       setRoomId(data.roomId);
@@ -84,13 +57,22 @@ const [currentWord, setCurrentWord] =
   setCurrentWord(word);
 
 });
+socket.on(
+  "timer_update",
+  (time) => {
+
+    setTimeLeft(time);
+
+  }
+);
     return () => {
 
       socket.off("room_created");
       socket.off("player_list");
       socket.off("error_message");
       socket.off("chat_message");
-
+      socket.off("your_word");
+      socket.off("timer_update");
     };
 
   }, []);

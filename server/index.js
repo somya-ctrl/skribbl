@@ -31,67 +31,183 @@ const io = new Server(server, {
   },
 });
 
+// TIMER FUNCTION
+function startTimer(roomId) {
+
+  const room = rooms[roomId];
+
+  if (!room) return;
+
+  // CLEAR OLD TIMER
+  if (room.timerInterval) {
+    clearInterval(room.timerInterval);
+  }
+
+  room.timeLeft = 60;
+
+  io.to(roomId).emit(
+    "timer_update",
+    room.timeLeft
+  );
+
+  room.timerInterval = setInterval(() => {
+
+    if (!rooms[roomId]) {
+
+      clearInterval(room.timerInterval);
+
+      return;
+
+    }
+
+    room.timeLeft--;
+
+    io.to(roomId).emit(
+      "timer_update",
+      room.timeLeft
+    );
+
+    // TIMER END
+    if (room.timeLeft <= 0) {
+
+      clearInterval(room.timerInterval);
+
+      nextTurn(roomId);
+
+      startTimer(roomId);
+
+    }
+
+  }, 1000);
+
+}
+
+// NEXT TURN FUNCTION
+function nextTurn(roomId) {
+
+  const room = rooms[roomId];
+
+  if (!room) return;
+
+  // NEXT DRAWER
+  room.currentDrawerIndex =
+    (room.currentDrawerIndex + 1) %
+    room.players.length;
+
+  room.currentDrawer =
+    room.players[
+      room.currentDrawerIndex
+    ].id;
+
+  // NEW WORD
+  room.currentWord =
+    words[
+      Math.floor(
+        Math.random() * words.length
+      )
+    ];
+
+  // SEND WORD TO DRAWER
+  io.to(room.currentDrawer).emit(
+    "your_word",
+    {
+      word: room.currentWord,
+    }
+  );
+
+  // UPDATE PLAYERS
+  io.to(roomId).emit(
+    "player_list",
+    {
+      players: room.players,
+      currentDrawer:
+        room.currentDrawer,
+    }
+  );
+
+  // CLEAR CANVAS
+  io.to(roomId).emit(
+    "canvas_cleared"
+  );
+
+}
+
 io.on("connection", (socket) => {
 
-  console.log("User connected:", socket.id);
+  console.log(
+    "User connected:",
+    socket.id
+  );
 
   // CREATE ROOM
-  socket.on("create_room", ({ playerName }) => {
+  socket.on(
+    "create_room",
+    ({ playerName }) => {
 
-    const roomId = Math.random()
-      .toString(36)
-      .substring(2, 8)
-      .toUpperCase();
+      const roomId = Math.random()
+        .toString(36)
+        .substring(2, 8)
+        .toUpperCase();
 
-    rooms[roomId] = {
-      players: [
-        {
-          id: socket.id,
-          name: playerName,
-          score: 0,
-        },
-      ],
+      rooms[roomId] = {
 
-      currentDrawer: socket.id,
-
-      currentDrawerIndex: 0,
-
-      currentWord:
-        words[
-          Math.floor(
-            Math.random() * words.length
-          )
+        players: [
+          {
+            id: socket.id,
+            name: playerName,
+            score: 0,
+          },
         ],
-    };
 
-    socket.join(roomId);
+        currentDrawer: socket.id,
 
-    socket.emit("room_created", {
-      roomId,
-      players: rooms[roomId].players,
-      currentDrawer:
-        rooms[roomId].currentDrawer,
-    });
+        currentDrawerIndex: 0,
 
-    // SEND WORD TO DRAWER
-    socket.emit("your_word", {
-      word:
-        rooms[roomId].currentWord,
-    });
+        currentWord:
+          words[
+            Math.floor(
+              Math.random() *
+                words.length
+            )
+          ],
 
-    console.log("Room created:", roomId);
+        timeLeft: 60,
+        timerInterval: null,
+        gameStarted: false,
 
-  });
+      };
+
+      socket.join(roomId);
+
+      socket.emit(
+        "room_created",
+        {
+          roomId,
+          players:
+            rooms[roomId].players,
+          currentDrawer:
+            rooms[roomId]
+              .currentDrawer,
+        }
+      );
+
+      socket.emit("your_word", {
+        word:
+          rooms[roomId].currentWord,
+      });
+
+      console.log(
+        "Room created:",
+        roomId
+      );
+
+    }
+  );
 
   // JOIN ROOM
   socket.on(
     "join_room",
     ({ roomId, playerName }) => {
-
-      console.log(
-        "Trying to join:",
-        roomId
-      );
 
       const room = rooms[roomId];
 
@@ -134,9 +250,17 @@ io.on("connection", (socket) => {
         }
       );
 
-      console.log(
-        `${playerName} joined ${roomId}`
-      );
+      // START GAME WHEN 2 PLAYERS
+      if (
+        room.players.length >= 2 &&
+        !room.gameStarted
+      ) {
+
+        room.gameStarted = true;
+
+        startTimer(roomId);
+
+      }
 
     }
   );
@@ -158,7 +282,6 @@ io.on("connection", (socket) => {
 
     if (!room) return;
 
-    // ONLY DRAWER CAN DRAW
     if (
       socket.id !== room.currentDrawer
     ) {
@@ -185,7 +308,6 @@ io.on("connection", (socket) => {
 
       if (!room) return;
 
-      // ONLY DRAWER CAN CLEAR
       if (
         socket.id !==
         room.currentDrawer
@@ -193,59 +315,6 @@ io.on("connection", (socket) => {
         return;
       }
 
-      io.to(roomId).emit(
-        "canvas_cleared"
-      );
-
-    }
-  );
-
-  // NEXT TURN
-  socket.on(
-    "next_turn",
-    ({ roomId }) => {
-
-      const room = rooms[roomId];
-
-      if (!room) return;
-
-      // NEXT DRAWER
-      room.currentDrawerIndex =
-        (room.currentDrawerIndex + 1) %
-        room.players.length;
-
-      room.currentDrawer =
-        room.players[
-          room.currentDrawerIndex
-        ].id;
-
-      // NEW WORD
-      room.currentWord =
-        words[
-          Math.floor(
-            Math.random() *
-              words.length
-          )
-        ];
-
-      // SEND WORD TO NEW DRAWER
-      io.to(
-        room.currentDrawer
-      ).emit("your_word", {
-        word: room.currentWord,
-      });
-
-      // UPDATE PLAYERS
-      io.to(roomId).emit(
-        "player_list",
-        {
-          players: room.players,
-          currentDrawer:
-            room.currentDrawer,
-        }
-      );
-
-      // CLEAR BOARD
       io.to(roomId).emit(
         "canvas_cleared"
       );
@@ -284,11 +353,9 @@ io.on("connection", (socket) => {
       // CORRECT GUESS
       if (
         text.toLowerCase().trim() ===
-        room.currentWord
-          .toLowerCase()
+        room.currentWord.toLowerCase()
       ) {
 
-        // GIVE SCORE
         const guessedPlayer =
           room.players.find(
             (p) =>
@@ -296,10 +363,11 @@ io.on("connection", (socket) => {
           );
 
         if (guessedPlayer) {
+
           guessedPlayer.score += 10;
+
         }
 
-        // SUCCESS MESSAGE
         io.to(roomId).emit(
           "chat_message",
           {
@@ -309,34 +377,6 @@ io.on("connection", (socket) => {
           }
         );
 
-        // NEXT DRAWER
-        room.currentDrawerIndex =
-          (room.currentDrawerIndex +
-            1) %
-          room.players.length;
-
-        room.currentDrawer =
-          room.players[
-            room.currentDrawerIndex
-          ].id;
-
-        // NEW WORD
-        room.currentWord =
-          words[
-            Math.floor(
-              Math.random() *
-                words.length
-            )
-          ];
-
-        // SEND WORD TO NEW DRAWER
-        io.to(
-          room.currentDrawer
-        ).emit("your_word", {
-          word: room.currentWord,
-        });
-
-        // UPDATE PLAYERS
         io.to(roomId).emit(
           "player_list",
           {
@@ -346,10 +386,9 @@ io.on("connection", (socket) => {
           }
         );
 
-        // CLEAR BOARD
-        io.to(roomId).emit(
-          "canvas_cleared"
-        );
+        nextTurn(roomId);
+
+        startTimer(roomId);
 
         return;
 
@@ -401,11 +440,6 @@ io.on("connection", (socket) => {
       ) {
 
         delete rooms[roomId];
-
-        console.log(
-          "Room deleted:",
-          roomId
-        );
 
       }
 
