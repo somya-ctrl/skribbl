@@ -35,28 +35,6 @@ export default function Home({ onJoin, onCreate }) {
           draw · guess · win
         </p>
 
-        {/* Online players */}
-        <div className="flex items-center justify-center mb-1">
-          {["A", "M", "R", "K"].map((l, i) => (
-            <div
-              key={l}
-              className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border-2 border-[#1a1a27] flex items-center justify-center text-[10px] font-medium text-white"
-              style={{
-                background: ["#6c63ff", "#ff6b9d", "#ffd93d", "#6bcb77"][i],
-                marginLeft: i === 0 ? 0 : -6,
-              }}
-            >
-              {l}
-            </div>
-          ))}
-          <div
-            className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border-2 border-[#1a1a27] bg-white/10 flex items-center justify-center text-[9px] text-white/40"
-            style={{ marginLeft: -6 }}
-          >
-            +8
-          </div>
-        </div>
-        <p className="text-center text-white/25 text-xs mb-4 sm:mb-5">12 players online</p>
 
         {/* Tabs */}
         <div className="flex bg-[#111118] rounded-xl p-0.5 gap-0.5 mb-4 sm:mb-5">
