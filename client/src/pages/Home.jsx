@@ -7,7 +7,7 @@ export default function Home({ onJoin, onCreate }) {
   const [name, setName] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [settings, setSettings] = useState({
-    maxPlayers: 8, rounds: 3, drawTime: 80, wordCount: 3,
+    maxPlayers: 8, rounds: 3, drawTime: 80, wordChoices: 3,
   });
 
   const handleJoin = () => {
@@ -97,7 +97,7 @@ export default function Home({ onJoin, onCreate }) {
                 { label: "Max players", key: "maxPlayers", opts: [4,8,12,20] },
                 { label: "Rounds",       key: "rounds",     opts: [2,3,4,5] },
                 { label: "Draw time",    key: "drawTime",   opts: [30,60,80,120], suffix: "s" },
-                { label: "Word choices", key: "wordCount",  opts: [2,3,4,5] },
+                { label: "Word choices", key: "wordChoices",  opts: [2,3,4,5] },
               ].map(({ label, key, opts, suffix }) => (
                 <div key={key}>
                   <label className="block text-[10px] text-white/30 uppercase tracking-wider mb-1.5">
