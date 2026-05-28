@@ -10,6 +10,8 @@ function App() {
   const [players, setPlayers] = useState([]);
   const [inRoom, setInRoom] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [wordChoices, setWordChoices] =
+  useState([]);
 
   const [messages, setMessages] =
     useState([]);
@@ -84,7 +86,14 @@ function App() {
 
       }
     );
+    socket.on(
+  "word_choices",
+  ({ words }) => {
 
+    setWordChoices(words);
+
+  }
+);
     socket.on(
       "timer_update",
       (time) => {
@@ -503,6 +512,40 @@ function App() {
               </div>
 
             )}
+            {socket.id === currentDrawer &&
+wordChoices.length > 0 && (
+
+  <div className="flex gap-3">
+
+    {wordChoices.map((word) => (
+
+      <button
+        key={word}
+        onClick={() => {
+
+          socket.emit(
+            "select_word",
+            {
+              roomId,
+              word,
+            }
+          );
+
+          setCurrentWord(word);
+
+          setWordChoices([]);
+
+        }}
+        className="px-4 py-2 bg-[#6c63ff] rounded-xl"
+      >
+        {word}
+      </button>
+
+    ))}
+
+  </div>
+
+)}
 
             {/* CANVAS */}
             <div className="rounded-xl overflow-hidden border-2 border-white/[0.06] shadow-inner bg-white">
