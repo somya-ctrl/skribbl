@@ -98,7 +98,7 @@ http://localhost:5173
 
 # 🎮 Gameplay Flow
 
-1. User creates or joins a room
+1. User creates or joins a room (through unique code visible on top)
 2. Game starts when minimum 2 players join
 3. Drawer selects a word
 4. Other players guess through chat
