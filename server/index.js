@@ -22,6 +22,16 @@ const words = [
   "house",
   "pizza",
   "tree",
+  "watch",
+  "toffee",
+  "glass",
+  "bottle",
+  "television",
+  "stairs",
+  "elephant",
+  "telephone",
+  "umbrella",
+  "airplane"
 ];
 
 const io = new Server(server, {
