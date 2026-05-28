@@ -386,6 +386,16 @@ socket.on(
   <div className="text-lg font-bold text-yellow-400">
     Word: {currentWord}
   </div>
+)}           
+            {players.length < 2 && (
+
+  <div className="w-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 px-4 py-3 rounded-xl text-sm font-medium text-center">
+
+    Waiting for players...
+    Need at least 2 players to start 🎮
+
+  </div>
+
 )}
             <div className="rounded-xl overflow-hidden border-2 border-white/[0.06] shadow-inner bg-white">
 

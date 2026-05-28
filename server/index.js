@@ -125,6 +125,21 @@ function nextTurn(roomId) {
     }
   );
 
+  // TURN MESSAGE
+  const nextPlayer =
+    room.players[
+      room.currentDrawerIndex
+    ];
+
+  io.to(roomId).emit(
+    "chat_message",
+    {
+      playerName: "SYSTEM",
+      text:
+        `${nextPlayer.name} is now drawing! ✏️`,
+    }
+  );
+
   // CLEAR CANVAS
   io.to(roomId).emit(
     "canvas_cleared"
@@ -172,7 +187,9 @@ io.on("connection", (socket) => {
           ],
 
         timeLeft: 60,
+
         timerInterval: null,
+
         gameStarted: false,
 
       };
@@ -191,6 +208,7 @@ io.on("connection", (socket) => {
         }
       );
 
+      // SEND WORD TO DRAWER
       socket.emit("your_word", {
         word:
           rooms[roomId].currentWord,
@@ -258,6 +276,15 @@ io.on("connection", (socket) => {
 
         room.gameStarted = true;
 
+        io.to(roomId).emit(
+          "chat_message",
+          {
+            playerName: "SYSTEM",
+            text:
+              "Game started! 🎮",
+          }
+        );
+
         startTimer(roomId);
 
       }
@@ -282,6 +309,7 @@ io.on("connection", (socket) => {
 
     if (!room) return;
 
+    // ONLY DRAWER CAN DRAW
     if (
       socket.id !== room.currentDrawer
     ) {
@@ -308,6 +336,7 @@ io.on("connection", (socket) => {
 
       if (!room) return;
 
+      // ONLY DRAWER CAN CLEAR
       if (
         socket.id !==
         room.currentDrawer
@@ -356,6 +385,7 @@ io.on("connection", (socket) => {
         room.currentWord.toLowerCase()
       ) {
 
+        // GIVE SCORE
         const guessedPlayer =
           room.players.find(
             (p) =>
@@ -368,6 +398,7 @@ io.on("connection", (socket) => {
 
         }
 
+        // SUCCESS MESSAGE
         io.to(roomId).emit(
           "chat_message",
           {
@@ -377,6 +408,7 @@ io.on("connection", (socket) => {
           }
         );
 
+        // UPDATE SCORES
         io.to(roomId).emit(
           "player_list",
           {
@@ -386,8 +418,10 @@ io.on("connection", (socket) => {
           }
         );
 
+        // NEXT TURN
         nextTurn(roomId);
 
+        // RESTART TIMER
         startTimer(roomId);
 
         return;
@@ -438,6 +472,10 @@ io.on("connection", (socket) => {
         rooms[roomId].players
           .length === 0
       ) {
+
+        clearInterval(
+          rooms[roomId].timerInterval
+        );
 
         delete rooms[roomId];
 
