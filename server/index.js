@@ -267,7 +267,9 @@ io.on("connection", (socket) => {
           settings.maxPlayers || 8,
 
         wordChoices:
-          settings.wordChoices || 3,
+  parseInt(
+    settings.wordChoices
+  ) || 3,
 
         currentRound: 1,
 
