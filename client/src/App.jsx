@@ -10,23 +10,35 @@ function App() {
   const [players, setPlayers] = useState([]);
   const [inRoom, setInRoom] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [messages, setMessages] = useState([]);
-const [messageInput, setMessageInput] = useState("");
-const [currentWord, setCurrentWord] =
-  useState("");
-  // NEW
+
+  const [messages, setMessages] =
+    useState([]);
+
+  const [messageInput, setMessageInput] =
+    useState("");
+
+  const [currentWord, setCurrentWord] =
+    useState("");
+
   const [currentDrawer, setCurrentDrawer] =
     useState("");
-    const [timeLeft, setTimeLeft] =
-  useState(60);
+
+  // TIMER
+  const [timeLeft, setTimeLeft] =
+    useState(0);
 
   useEffect(() => {
 
     socket.on("room_created", (data) => {
 
       setRoomId(data.roomId);
+
       setPlayers(data.players);
-      setCurrentDrawer(data.currentDrawer);
+
+      setCurrentDrawer(
+        data.currentDrawer
+      );
+
       setInRoom(true);
 
     });
@@ -34,49 +46,73 @@ const [currentWord, setCurrentWord] =
     socket.on("player_list", (data) => {
 
       setPlayers(data.players);
-      setCurrentDrawer(data.currentDrawer);
+
+      setCurrentDrawer(
+        data.currentDrawer
+      );
 
     });
 
-    socket.on("error_message", (message) => {
+    socket.on(
+      "error_message",
+      (message) => {
 
-      alert(message);
-      setInRoom(false);
+        alert(message);
 
-    });
-    socket.on("chat_message", (message) => {
+        setInRoom(false);
 
-  setMessages((prev) => [
-    ...prev,
-    message,
-  ]);
-  
-});
- socket.on("your_word", ({ word }) => {
+      }
+    );
 
-  setCurrentWord(word);
+    socket.on(
+      "chat_message",
+      (message) => {
 
-});
-socket.on(
-  "timer_update",
-  (time) => {
+        setMessages((prev) => [
+          ...prev,
+          message,
+        ]);
 
-    setTimeLeft(time);
+      }
+    );
 
-  }
-);
+    socket.on(
+      "your_word",
+      ({ word }) => {
+
+        setCurrentWord(word);
+
+      }
+    );
+
+    socket.on(
+      "timer_update",
+      (time) => {
+
+        setTimeLeft(time);
+
+      }
+    );
+
     return () => {
 
       socket.off("room_created");
+
       socket.off("player_list");
+
       socket.off("error_message");
+
       socket.off("chat_message");
+
       socket.off("your_word");
+
       socket.off("timer_update");
+
     };
 
   }, []);
 
+  // CREATE ROOM
   const handleCreateRoom = (
     playerName,
     settings
@@ -91,6 +127,7 @@ socket.on(
 
   };
 
+  // JOIN ROOM
   const handleJoinRoom = (
     playerName,
     targetRoomId
@@ -109,6 +146,7 @@ socket.on(
 
   };
 
+  // LEAVE ROOM
   const handleLeaveRoom = () => {
 
     socket.disconnect();
@@ -123,31 +161,47 @@ socket.on(
 
     setCurrentDrawer("");
 
+    setMessages([]);
+
+    setCurrentWord("");
+
+    setTimeLeft(0);
+
   };
+
+  // SEND CHAT
   const sendMessage = () => {
 
-  if (!messageInput.trim()) return;
+    if (!messageInput.trim()) return;
 
-  socket.emit("chat_message", {
-    roomId,
-    playerName: name,
-    text: messageInput,
-  });
+    socket.emit("chat_message", {
+      roomId,
+      playerName: name,
+      text: messageInput,
+    });
 
-  setMessageInput("");
+    setMessageInput("");
 
-};
+  };
 
+  // COPY ROOM CODE
   const copyRoomId = () => {
 
-    navigator.clipboard.writeText(roomId);
+    navigator.clipboard.writeText(
+      roomId
+    );
 
     setCopied(true);
 
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => {
+
+      setCopied(false);
+
+    }, 2000);
 
   };
 
+  // HOME SCREEN
   if (!inRoom) {
 
     return (
@@ -160,6 +214,7 @@ socket.on(
   }
 
   return (
+
     <div className="min-h-screen bg-[#111118] text-white flex flex-col font-sans">
 
       {/* HEADER */}
@@ -168,9 +223,11 @@ socket.on(
         <div className="flex items-center gap-2.5">
 
           <div className="w-8 h-8 bg-[#6c63ff] rounded-lg flex items-center justify-center">
+
             <span className="text-white text-sm">
               ✏️
             </span>
+
           </div>
 
           <span className="text-white text-lg font-semibold tracking-tight">
@@ -202,7 +259,9 @@ socket.on(
                   Copied!
                 </span>
               ) : (
-                <span>Copy</span>
+                <span>
+                  Copy
+                </span>
               )}
 
             </button>
@@ -226,148 +285,184 @@ socket.on(
         {/* SIDEBAR */}
         <aside className="w-80 bg-[#1a1a27]/60 border-r border-white/[0.06] p-6 flex flex-col gap-5">
 
+          {/* PLAYERS HEADER */}
           <div className="flex items-center justify-between">
 
             <h2 className="text-[11px] font-bold text-white/30 uppercase tracking-widest">
               Players
             </h2>
-                   <span className="bg-[#6c63ff]/10 text-[#9c96ff] text-xs font-semibold px-2.5 py-0.5 rounded-full border border-[#6c63ff]/15">
+
+            <span className="bg-[#6c63ff]/10 text-[#9c96ff] text-xs font-semibold px-2.5 py-0.5 rounded-full border border-[#6c63ff]/15">
               {players.length} online
             </span>
 
           </div>
 
+          {/* PLAYER LIST */}
           <div className="flex flex-col gap-2.5 overflow-y-auto">
 
-             {[...players]
-             .sort((a, b) => b.score - a.score)
-            .map((player, idx) => (
-
-              <div
-                key={player.id || idx}
-                className={`flex items-center gap-3 bg-[#111118]/60 p-3 rounded-xl border ${
-                  player.id === socket.id
-                    ? "border-[#6c63ff]/30 bg-[#6c63ff]/5"
-                    : "border-white/[0.04]"
-                }`}
-              >
+            {[...players]
+              .sort(
+                (a, b) =>
+                  b.score - a.score
+              )
+              .map((player, idx) => (
 
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs text-white"
-                  style={{
-                    background: [
-                      "#6c63ff",
-                      "#ff6b9d",
-                      "#ffd93d",
-                      "#6bcb77",
-                      "#ff4b4b",
-                      "#4bafff",
-                    ][idx % 6],
-                  }}
+                  key={player.id || idx}
+                  className={`flex items-center gap-3 bg-[#111118]/60 p-3 rounded-xl border ${
+                    player.id === socket.id
+                      ? "border-[#6c63ff]/30 bg-[#6c63ff]/5"
+                      : "border-white/[0.04]"
+                  }`}
                 >
 
-                  {player.name
-                    .substring(0, 2)
-                    .toUpperCase()}
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs text-white"
+                    style={{
+                      background: [
+                        "#6c63ff",
+                        "#ff6b9d",
+                        "#ffd93d",
+                        "#6bcb77",
+                        "#ff4b4b",
+                        "#4bafff",
+                      ][idx % 6],
+                    }}
+                  >
+
+                    {player.name
+                      .substring(0, 2)
+                      .toUpperCase()}
+
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+
+                    <p className="text-sm font-medium text-white truncate">
+
+                      {player.id === currentDrawer && (
+                        <span className="mr-1">
+                          👑
+                        </span>
+                      )}
+
+                      {player.name}
+
+                      {player.id === socket.id && (
+                        <span className="text-[10px] text-white/40 ml-1.5 font-normal">
+                          (You)
+                        </span>
+                      )}
+
+                    </p>
+
+                    <p className="text-xs text-white/40 mt-1">
+                      Score: {player.score}
+                    </p>
+
+                  </div>
 
                 </div>
 
-                <div className="flex-1 min-w-0">
-
-                  <p className="text-sm font-medium text-white truncate">
-
-                    {player.name}
-
-                    {player.id === socket.id && (
-                      <span className="text-[10px] text-white/40 ml-1.5 font-normal">
-                        (You)
-                      </span>
-                    )}
-
-                    {player.id === currentDrawer && (
-                      <span className="ml-2 text-[10px] text-yellow-400">
-                        ✏️ Drawing
-                      </span>
-                    )}
-
-                  </p>
-                  <p className="text-xs text-white/40 mt-1">
-  Score: {player.score}
-</p>
-                </div>
-
-              </div>
-
-            ))}
+              ))}
 
           </div>
-          {/* CHAT SECTION */}
-<div className="mt-4 flex flex-col h-full">
 
-  <h2 className="text-[11px] font-bold text-white/30 uppercase tracking-widest mb-3">
-    Chat
-  </h2>
+          {/* CHAT */}
+          <div className="mt-4 flex flex-col h-full">
 
-  {/* MESSAGES */}
-  <div className="flex-1 bg-[#111118]/60 rounded-xl border border-white/[0.05] p-3 overflow-y-auto flex flex-col gap-2 max-h-[250px]">
+            <h2 className="text-[11px] font-bold text-white/30 uppercase tracking-widest mb-3">
+              Chat
+            </h2>
 
-    {messages.map((msg, idx) => (
+            {/* MESSAGES */}
+            <div className="flex-1 bg-[#111118]/60 rounded-xl border border-white/[0.05] p-3 overflow-y-auto flex flex-col gap-2 max-h-[250px]">
 
-      <div
-        key={idx}
-        className="text-sm"
-      >
+              {messages.map((msg, idx) => (
 
-        <span className="font-semibold text-[#6c63ff]">
-          {msg.playerName}:
-        </span>
+                <div
+                  key={idx}
+                  className="text-sm"
+                >
 
-        <span className="text-white/80 ml-2">
-          {msg.text}
-        </span>
+                  <span className="font-semibold text-[#6c63ff]">
+                    {msg.playerName}:
+                  </span>
 
-      </div>
+                  <span className="text-white/80 ml-2">
+                    {msg.text}
+                  </span>
 
-    ))}
+                </div>
 
-  </div>
+              ))}
 
-  {/* INPUT */}
-  <div className="flex gap-2 mt-3">
+            </div>
 
-    <input
-      type="text"
-      placeholder="Type a guess..."
-      value={messageInput}
-      onChange={(e) =>
-        setMessageInput(e.target.value)
-      }
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          sendMessage();
-        }
-      }}
-      className="flex-1 bg-[#111118] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white outline-none"
-    />
+            {/* INPUT */}
+            <div className="flex gap-2 mt-3">
 
-    <button
-      onClick={sendMessage}
-      className="px-4 py-2 bg-[#6c63ff] hover:bg-[#7b73ff] rounded-xl text-sm font-medium"
-    >
-      Send
-    </button>
+              <input
+                type="text"
+                placeholder={
+                  socket.id === currentDrawer
+                    ? "You are drawing..."
+                    : "Type a guess..."
+                }
+                value={messageInput}
+                disabled={
+                  socket.id === currentDrawer
+                }
+                onChange={(e) =>
+                  setMessageInput(
+                    e.target.value
+                  )
+                }
+                onKeyDown={(e) => {
 
-  </div>
+                  if (e.key === "Enter") {
 
-</div>
+                    sendMessage();
+
+                  }
+
+                }}
+                className={`flex-1 border border-white/[0.08] rounded-xl px-3 py-2 text-sm outline-none ${
+                  socket.id ===
+                  currentDrawer
+                    ? "bg-[#222] text-white/40 cursor-not-allowed"
+                    : "bg-[#111118] text-white"
+                }`}
+              />
+
+              <button
+                onClick={sendMessage}
+                disabled={
+                  socket.id === currentDrawer
+                }
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                  socket.id ===
+                  currentDrawer
+                    ? "bg-[#444] text-white/40 cursor-not-allowed"
+                    : "bg-[#6c63ff] hover:bg-[#7b73ff]"
+                }`}
+              >
+                Send
+              </button>
+
+            </div>
+
+          </div>
 
         </aside>
 
-        {/* DRAWING AREA */}
+        {/* DRAW AREA */}
         <main className="flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto">
 
           <div className="bg-[#1a1a27] p-5 rounded-2xl border border-white/[0.07] shadow-2xl flex flex-col items-center gap-4">
 
+            {/* TOP BAR */}
             <div className="w-full flex justify-between items-center px-1">
 
               <span className="text-sm font-semibold text-white/70">
@@ -379,24 +474,37 @@ socket.on(
               </span>
 
             </div>
+
+            {/* TIMER */}
             <div className="text-white text-lg font-bold">
-  ⏳ {timeLeft}s
-</div>
-             {socket.id === currentDrawer && (
-  <div className="text-lg font-bold text-yellow-400">
-    Word: {currentWord}
-  </div>
-)}           
+
+              {players.length < 2
+                ? "Waiting..."
+                : `⏳ ${timeLeft}s`}
+
+            </div>
+
+            {/* WORD */}
+            {socket.id === currentDrawer && (
+              <div className="text-2xl font-bold text-yellow-400">
+                Word: {currentWord}
+              </div>
+            )}
+
+            {/* WAITING */}
             {players.length < 2 && (
 
-  <div className="w-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 px-4 py-3 rounded-xl text-sm font-medium text-center">
+              <div className="w-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 px-4 py-3 rounded-xl text-sm font-medium text-center">
 
-    Waiting for players...
-    Need at least 2 players to start 🎮
+                Waiting for players...
+                Need at least 2 players
+                to start 🎮
 
-  </div>
+              </div>
 
-)}
+            )}
+
+            {/* CANVAS */}
             <div className="rounded-xl overflow-hidden border-2 border-white/[0.06] shadow-inner bg-white">
 
               <Canvas
@@ -408,13 +516,15 @@ socket.on(
 
             </div>
 
+            {/* HELP TEXT */}
             <div className="flex items-center gap-2 text-white/30 text-xs mt-1">
 
               <span>✏️</span>
 
               <span>
-                Click and drag inside the canvas
-                to draw. Other players will see
+                Click and drag inside
+                the canvas to draw.
+                Other players will see
                 it in real-time.
               </span>
 
@@ -427,7 +537,9 @@ socket.on(
       </div>
 
     </div>
+
   );
+
 }
 
 export default App;

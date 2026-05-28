@@ -159,13 +159,12 @@ function nextTurn(roomId) {
       room.currentDrawerIndex
     ].id;
 
-  // NEW WORD
-  room.currentWord =
-    words[
-      Math.floor(
-        Math.random() * words.length
-      )
-    ];
+  const choices =
+  getRandomWords(
+    room.wordChoices
+  );
+
+room.currentWord = choices[0];
 
   // SEND WORD TO DRAWER
   io.to(room.currentDrawer).emit(
@@ -257,6 +256,10 @@ io.on("connection", (socket) => {
 
         maxRounds:
           settings.rounds || 3,
+        maxPlayers:
+        settings.maxPlayers || 8,
+        wordChoices:
+        settings.wordChoices || 3,
 
         currentRound: 1,
 
@@ -302,7 +305,19 @@ io.on("connection", (socket) => {
     ({ roomId, playerName }) => {
 
       const room = rooms[roomId];
+      if (
+  room.players.length >=
+  room.maxPlayers
+) {
 
+  socket.emit(
+    "error_message",
+    "Room is full"
+  );
+
+  return;
+
+}
       if (!room) {
 
         socket.emit(
@@ -526,7 +541,13 @@ io.on("connection", (socket) => {
           updatedRoom &&
           updatedRoom.gameStarted
         ) {
+          function getRandomWords(count) {
 
+  return [...words]
+    .sort(() => 0.5 - Math.random())
+    .slice(0, count);
+
+}
           startTimer(roomId);
 
         }
