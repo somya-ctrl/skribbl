@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import socket from "./socket";
 import Canvas from "./components/Canvas";
 import Home from "./pages/Home";
@@ -31,6 +31,25 @@ function App() {
 
   const [winner, setWinner] =
     useState("");
+
+  const [sidebarOpen, setSidebarOpen] =
+    useState(false);
+
+  // NEW: mobile chat state
+  const [mobileChatOpen, setMobileChatOpen] =
+    useState(false);
+
+  const messagesEndRef = useRef(null);
+  const mobileMessagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+    if (mobileMessagesEndRef.current) {
+      mobileMessagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   useEffect(() => {
 
@@ -198,6 +217,10 @@ function App() {
 
     setTimeLeft(0);
 
+    setSidebarOpen(false);
+
+    setMobileChatOpen(false);
+
   };
 
   // SEND MESSAGE
@@ -249,11 +272,11 @@ function App() {
     <div className="min-h-screen bg-[#111118] text-white flex flex-col font-sans">
 
       {/* HEADER */}
-      <header className="bg-[#1a1a27] border-b border-white/[0.06] px-6 py-4 flex items-center justify-between shadow-md">
+      <header className="bg-[#1a1a27] border-b border-white/[0.06] px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-md flex-wrap gap-2">
 
         <div className="flex items-center gap-2.5">
 
-          <div className="w-8 h-8 bg-[#6c63ff] rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-[#6c63ff] rounded-lg flex items-center justify-center shrink-0">
 
             <span className="text-white text-sm">
               ✏️
@@ -268,11 +291,11 @@ function App() {
         </div>
 
         {/* ROOM CODE */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
 
-          <div className="flex items-center gap-2.5 bg-[#111118] px-3.5 py-1.5 rounded-xl border border-white/[0.08]">
+          <div className="flex items-center gap-2 sm:gap-2.5 bg-[#111118] px-2.5 sm:px-3.5 py-1.5 rounded-xl border border-white/[0.08]">
 
-            <span className="text-[10px] text-white/30 uppercase tracking-wider font-semibold">
+            <span className="hidden sm:block text-[10px] text-white/30 uppercase tracking-wider font-semibold">
               Room Code
             </span>
 
@@ -299,9 +322,17 @@ function App() {
 
           </div>
 
+          {/* MOBILE SIDEBAR TOGGLE */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="sm:hidden px-3 py-1.5 bg-[#6c63ff]/10 hover:bg-[#6c63ff]/20 text-[#9c96ff] border border-[#6c63ff]/20 rounded-xl text-sm font-medium transition-all"
+          >
+            👥 {players.length}
+          </button>
+
           <button
             onClick={handleLeaveRoom}
-            className="px-4 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-sm font-medium transition-all cursor-pointer"
+            className="px-3 sm:px-4 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-sm font-medium transition-all cursor-pointer"
           >
             Leave
           </button>
@@ -311,10 +342,39 @@ function App() {
       </header>
 
       {/* MAIN */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
+
+        {/* MOBILE OVERLAY */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 z-20 sm:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
         {/* SIDEBAR */}
-        <aside className="w-80 bg-[#1a1a27]/60 border-r border-white/[0.06] p-6 flex flex-col gap-5">
+        <aside className={`
+          fixed sm:relative top-0 left-0 h-full z-30 sm:z-auto
+          w-72 sm:w-80
+          bg-[#1a1a27] sm:bg-[#1a1a27]/60
+          border-r border-white/[0.06]
+          p-4 sm:p-6
+          flex flex-col gap-4 sm:gap-5
+          transition-transform duration-300
+          overflow-y-auto
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full sm:translate-x-0"}
+        `}>
+
+          {/* MOBILE CLOSE BUTTON */}
+          <div className="flex items-center justify-between sm:hidden mb-1">
+            <span className="text-white/50 text-xs uppercase tracking-widest font-bold">Panel</span>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="text-white/40 hover:text-white text-xl leading-none"
+            >
+              ✕
+            </button>
+          </div>
 
           {/* PLAYERS */}
           <div className="flex items-center justify-between">
@@ -330,7 +390,7 @@ function App() {
           </div>
 
           {/* PLAYER LIST */}
-          <div className="flex flex-col gap-2.5 overflow-y-auto">
+          <div className="flex flex-col gap-2.5 overflow-y-auto max-h-48 sm:max-h-none">
 
             {[...players]
               .sort(
@@ -349,7 +409,7 @@ function App() {
                 >
 
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs text-white"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs text-white shrink-0"
                     style={{
                       background: [
                         "#6c63ff",
@@ -400,15 +460,15 @@ function App() {
 
           </div>
 
-          {/* CHAT */}
-          <div className="mt-4 flex flex-col h-full">
+          {/* CHAT — hidden on mobile (handled by bottom bar instead) */}
+          <div className="mt-2 sm:mt-4 hidden sm:flex flex-col flex-1 min-h-0">
 
             <h2 className="text-[11px] font-bold text-white/30 uppercase tracking-widest mb-3">
               Chat
             </h2>
 
             {/* MESSAGES */}
-            <div className="flex-1 bg-[#111118]/60 rounded-xl border border-white/[0.05] p-3 overflow-y-auto flex flex-col gap-2 max-h-[250px]">
+            <div className="flex-1 bg-[#111118]/60 rounded-xl border border-white/[0.05] p-3 overflow-y-auto flex flex-col gap-2 min-h-[140px] max-h-[200px] sm:max-h-[250px]">
 
               {messages.map((msg, idx) => (
 
@@ -421,13 +481,15 @@ function App() {
                     {msg.playerName}:
                   </span>
 
-                  <span className="text-white/80 ml-2">
+                  <span className="text-white/80 ml-2 break-words">
                     {msg.text}
                   </span>
 
                 </div>
 
               ))}
+
+              <div ref={messagesEndRef} />
 
             </div>
 
@@ -459,7 +521,7 @@ function App() {
                   }
 
                 }}
-                className={`flex-1 border border-white/[0.08] rounded-xl px-3 py-2 text-sm outline-none ${
+                className={`flex-1 min-w-0 border border-white/[0.08] rounded-xl px-3 py-2 text-sm outline-none ${
                   socket.id ===
                   currentDrawer
                     ? "bg-[#222] text-white/40 cursor-not-allowed"
@@ -472,11 +534,11 @@ function App() {
                 disabled={
                   socket.id === currentDrawer
                 }
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-all shrink-0 ${
                   socket.id ===
                   currentDrawer
                     ? "bg-[#444] text-white/40 cursor-not-allowed"
-                    : "bg-[#6c63ff] hover:bg-[#7b73ff]"
+                    : "bg-[#6c63ff] hover:bg-[#7b73ff] cursor-pointer"
                 }`}
               >
                 Send
@@ -489,12 +551,13 @@ function App() {
         </aside>
 
         {/* MAIN BOARD */}
-        <main className="flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto">
+        {/* pb-36 on mobile so content isn't hidden behind the fixed bottom chat bar */}
+        <main className="flex-1 flex flex-col items-center justify-start sm:justify-center p-3 sm:p-8 overflow-y-auto pb-36 sm:pb-8">
 
-          <div className="bg-[#1a1a27] p-5 rounded-2xl border border-white/[0.07] shadow-2xl flex flex-col items-center gap-4">
+          <div className="bg-[#1a1a27] p-3 sm:p-5 rounded-2xl border border-white/[0.07] shadow-2xl flex flex-col items-center gap-3 sm:gap-4 w-full max-w-[960px]">
 
             {/* TOP */}
-            <div className="w-full flex justify-between items-center px-1">
+            <div className="w-full flex justify-between items-center px-1 flex-wrap gap-2">
 
               <div className="flex flex-col">
 
@@ -502,7 +565,7 @@ function App() {
                   Drawing Board
                 </span>
 
-                <div className="flex gap-3 mt-1">
+                <div className="flex gap-2 sm:gap-3 mt-1 flex-wrap">
 
                   {[...players]
                     .sort(
@@ -553,7 +616,7 @@ function App() {
             {socket.id === currentDrawer &&
               wordChoices.length > 0 && (
 
-                <div className="flex gap-3">
+                <div className="flex gap-2 sm:gap-3 flex-wrap justify-center">
 
                   {wordChoices.map((word) => (
 
@@ -576,7 +639,7 @@ function App() {
                         setWordChoices([]);
 
                       }}
-                      className="px-4 py-2 bg-[#6c63ff] hover:bg-[#7b73ff] rounded-xl"
+                      className="px-3 sm:px-4 py-2 bg-[#6c63ff] hover:bg-[#7b73ff] rounded-xl text-sm sm:text-base cursor-pointer"
                     >
 
                       {word}
@@ -594,7 +657,7 @@ function App() {
               currentWord &&
               wordChoices.length === 0 && (
 
-                <div className="text-2xl font-bold text-yellow-400">
+                <div className="text-xl sm:text-2xl font-bold text-yellow-400">
                   Word: {currentWord}
                 </div>
 
@@ -603,13 +666,13 @@ function App() {
             {/* WINNER SCREEN */}
             {winner && (
 
-              <div className="w-full bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-6 flex flex-col items-center gap-4">
+              <div className="w-full bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 sm:p-6 flex flex-col items-center gap-3 sm:gap-4">
 
-                <div className="text-5xl">
+                <div className="text-4xl sm:text-5xl">
                   🏆
                 </div>
 
-                <h2 className="text-2xl font-bold text-yellow-400">
+                <h2 className="text-xl sm:text-2xl font-bold text-yellow-400 text-center">
 
                   {winner}
 
@@ -626,7 +689,7 @@ function App() {
                     );
 
                   }}
-                  className="px-5 py-2 bg-[#6c63ff] hover:bg-[#7b73ff] rounded-xl font-medium"
+                  className="px-5 py-2 bg-[#6c63ff] hover:bg-[#7b73ff] rounded-xl font-medium cursor-pointer"
                 >
 
                   Play Again
@@ -650,25 +713,29 @@ function App() {
 
             )}
 
-            {/* CANVAS */}
-            <div className="rounded-xl overflow-hidden border-2 border-white/[0.06] shadow-inner bg-white">
+            {/* CANVAS — horizontal scroll on mobile */}
+            <div className="w-full overflow-x-auto">
 
-              <Canvas
-                roomId={roomId}
-                canDraw={
-                  socket.id === currentDrawer
-                }
-              />
+              <div className="rounded-xl overflow-hidden border-2 border-white/[0.06] shadow-inner bg-white inline-block min-w-full sm:min-w-0">
+
+                <Canvas
+                  roomId={roomId}
+                  canDraw={
+                    socket.id === currentDrawer
+                  }
+                />
+
+              </div>
 
             </div>
 
             {/* HELP */}
-            <div className="flex items-center gap-2 text-white/30 text-xs mt-1">
+            <div className="flex items-center gap-2 text-white/30 text-xs mt-1 text-center">
 
               <span>✏️</span>
 
               <span>
-                Click and drag inside
+                Click/tap and drag inside
                 the canvas to draw.
                 Other players will see
                 it in real-time.
@@ -679,6 +746,92 @@ function App() {
           </div>
 
         </main>
+
+      </div>
+
+      {/* =============================================
+          MOBILE BOTTOM CHAT BAR — sm:hidden only
+      ============================================= */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#1a1a27] border-t border-white/[0.08] shadow-2xl">
+
+        {/* TOGGLE TAB */}
+        <button
+          onClick={() => setMobileChatOpen((prev) => !prev)}
+          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-white/60 hover:text-white/90 transition-colors"
+        >
+
+          <div className="flex items-center gap-2">
+            <span>💬</span>
+            <span>Chat</span>
+            {messages.length > 0 && (
+              <span className="bg-[#6c63ff] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                {messages.length}
+              </span>
+            )}
+          </div>
+
+          <span className="text-white/30 text-xs">
+            {mobileChatOpen ? "▼" : "▲"}
+          </span>
+
+        </button>
+
+        {/* EXPANDABLE MESSAGES */}
+        {mobileChatOpen && (
+          <div className="px-3 pb-1 max-h-40 overflow-y-auto flex flex-col gap-1.5 border-t border-white/[0.05]">
+
+            {messages.length === 0 ? (
+              <p className="text-white/25 text-xs text-center py-3">No messages yet</p>
+            ) : (
+              messages.map((msg, idx) => (
+                <div key={idx} className="text-sm py-0.5">
+                  <span className="font-semibold text-[#6c63ff]">{msg.playerName}:</span>
+                  <span className="text-white/80 ml-2 break-words">{msg.text}</span>
+                </div>
+              ))
+            )}
+
+            <div ref={mobileMessagesEndRef} />
+
+          </div>
+        )}
+
+        {/* ALWAYS-VISIBLE INPUT ROW */}
+        <div className="flex gap-2 px-3 pb-3 pt-1">
+
+          <input
+            type="text"
+            placeholder={
+              socket.id === currentDrawer
+                ? "You are drawing..."
+                : "Type a guess..."
+            }
+            value={messageInput}
+            disabled={socket.id === currentDrawer}
+            onChange={(e) => setMessageInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") sendMessage();
+            }}
+            className={`flex-1 min-w-0 border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm outline-none ${
+              socket.id === currentDrawer
+                ? "bg-[#222] text-white/40 cursor-not-allowed"
+                : "bg-[#111118] text-white"
+            }`}
+          />
+
+          <button
+            onClick={sendMessage}
+            disabled={socket.id === currentDrawer}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all shrink-0 ${
+              socket.id === currentDrawer
+                ? "bg-[#444] text-white/40 cursor-not-allowed"
+                : "bg-[#6c63ff] hover:bg-[#7b73ff] cursor-pointer"
+            }`}
+          >
+            Send
+          </button>
+
+        </div>
 
       </div>
 
