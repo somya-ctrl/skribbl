@@ -43,7 +43,8 @@ function startTimer(roomId) {
     clearInterval(room.timerInterval);
   }
 
-  room.timeLeft = 60;
+  // USE CUSTOM DRAW TIME
+  room.timeLeft = room.drawTime;
 
   io.to(roomId).emit(
     "timer_update",
@@ -74,7 +75,17 @@ function startTimer(roomId) {
 
       nextTurn(roomId);
 
-      startTimer(roomId);
+      const updatedRoom =
+        rooms[roomId];
+
+      if (
+        updatedRoom &&
+        updatedRoom.gameStarted
+      ) {
+
+        startTimer(roomId);
+
+      }
 
     }
 
@@ -93,6 +104,55 @@ function nextTurn(roomId) {
   room.currentDrawerIndex =
     (room.currentDrawerIndex + 1) %
     room.players.length;
+
+  // ROUND COMPLETE
+  if (room.currentDrawerIndex === 0) {
+
+  // CHECK GAME END FIRST
+  if (
+    room.currentRound >=
+    room.maxRounds
+  ) {
+
+    room.gameStarted = false;
+
+    clearInterval(
+      room.timerInterval
+    );
+
+    const winner =
+      [...room.players].sort(
+        (a, b) =>
+          b.score - a.score
+      )[0];
+
+    io.to(roomId).emit(
+      "chat_message",
+      {
+        playerName: "SYSTEM",
+        text:
+          `🏆 ${winner.name} wins the game!`,
+      }
+    );
+
+    return;
+
+  }
+
+  room.currentRound++;
+
+  io.to(roomId).emit(
+    "chat_message",
+    {
+      playerName: "SYSTEM",
+      text:
+        `Round ${room.currentRound}/${room.maxRounds}`,
+    }
+  );
+
+
+  }
+
 
   room.currentDrawer =
     room.players[
@@ -157,7 +217,10 @@ io.on("connection", (socket) => {
   // CREATE ROOM
   socket.on(
     "create_room",
-    ({ playerName }) => {
+    ({
+      playerName,
+      settings,
+    }) => {
 
       const roomId = Math.random()
         .toString(36)
@@ -185,6 +248,17 @@ io.on("connection", (socket) => {
                 words.length
             )
           ],
+
+        // SETTINGS
+        drawTime:
+          parseInt(
+            settings.drawTime
+          ) || 60,
+
+        maxRounds:
+          settings.rounds || 3,
+
+        currentRound: 1,
 
         timeLeft: 60,
 
@@ -281,7 +355,7 @@ io.on("connection", (socket) => {
           {
             playerName: "SYSTEM",
             text:
-              "Game started! 🎮",
+              `🎮 Game started! Round 1/${room.maxRounds}`,
           }
         );
 
@@ -398,6 +472,30 @@ io.on("connection", (socket) => {
 
         }
 
+        // WIN CONDITION
+        if (
+          guessedPlayer.score >= 50
+        ) {
+
+          room.gameStarted = false;
+
+          clearInterval(
+            room.timerInterval
+          );
+
+          io.to(roomId).emit(
+            "chat_message",
+            {
+              playerName: "SYSTEM",
+              text:
+                `🏆 ${guessedPlayer.name} wins the game!`,
+            }
+          );
+
+          return;
+
+        }
+
         // SUCCESS MESSAGE
         io.to(roomId).emit(
           "chat_message",
@@ -421,8 +519,17 @@ io.on("connection", (socket) => {
         // NEXT TURN
         nextTurn(roomId);
 
-        // RESTART TIMER
-        startTimer(roomId);
+        const updatedRoom =
+          rooms[roomId];
+
+        if (
+          updatedRoom &&
+          updatedRoom.gameStarted
+        ) {
+
+          startTimer(roomId);
+
+        }
 
         return;
 
